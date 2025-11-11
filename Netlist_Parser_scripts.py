@@ -53,6 +53,7 @@ class Netlist:
                 f"Gates: {len(self.gates)})")
 
 
+
 # --- 2. پارسر فایل Log تروجان ---
 
 def parse_trojan_log(log_file_path):
