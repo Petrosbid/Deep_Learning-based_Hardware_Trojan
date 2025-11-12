@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="complete phase 1">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="complete phase 2">
       <change afterPath="$PROJECT_DIR$/TRIT-TC/c2670_T000/c2670_T000_traces.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/TRIT-TC/c2670_T001/c2670_T001_traces.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/TRIT-TC/c2670_T002/c2670_T002_traces.json" afterDir="false" />
@@ -920,16 +919,14 @@
       <change afterPath="$PROJECT_DIR$/TRIT-TS/s35932_T617/s35932_T617_traces.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/TRIT-TS/s35932_T618/s35932_T618_traces.json" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/TRIT-TS/s35932_T619/s35932_T619_traces.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/count_jsonl_lines.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/graph_visualizer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/netlist_parser.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/phase1_graph_utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/preprocess_nlp.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/process_originals.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run_batch_extraction.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/create_balanced_dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dataset_upldated.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/train_detector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/train_detector_updated.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/train_nlp.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Netlist_Parser_scripts.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/TODOs.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -970,11 +967,14 @@
   "keyToString": {
     "Python.Netlist_Parser_scripts.executor": "Run",
     "Python.count_jsonl_lines.executor": "Run",
+    "Python.dataset_upldated.executor": "Run",
     "Python.graph_visualizer.executor": "Run",
     "Python.original_designs_Netlist_Parser_scripts.executor": "Run",
     "Python.preprocess_nlp.executor": "Run",
     "Python.process_originals.executor": "Run",
     "Python.run_batch_extraction.executor": "Run",
+    "Python.train_detector.executor": "Run",
+    "Python.train_detector_updated.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -1007,12 +1007,21 @@
       <option name="project" value="LOCAL" />
       <updated>1762851980444</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="complete phase 2">
+      <option name="closed" value="true" />
+      <created>1762935749626</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1762935749626</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="init project" />
     <MESSAGE value="complete phase 1" />
-    <option name="LAST_COMMIT_MESSAGE" value="complete phase 1" />
+    <MESSAGE value="complete phase 2" />
+    <option name="LAST_COMMIT_MESSAGE" value="complete phase 2" />
   </component>
 </project>
