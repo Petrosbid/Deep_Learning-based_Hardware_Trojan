@@ -22,6 +22,7 @@ def process_original_file(netlist_path: str) -> Tuple[bool, str]:
     try:
         # --- 1. تعریف نام‌ها ---
         base_name = os.path.basename(netlist_path)
+        circuit_name = base_name.replace('.v', '')
         dir_name = os.path.dirname(netlist_path)
         log_path = ""  # مسیر خالی یا نامعتبر
         json_output_file = os.path.join(dir_name, base_name.replace('.v', '_traces.json'))
@@ -61,7 +62,8 @@ def process_original_file(netlist_path: str) -> Tuple[bool, str]:
                 labeled_trace_data.append({
                     'trace': trace,
                     'label': label,
-                    'gate': center_gate
+                    'gate': center_gate,
+                    'circuit': circuit_name
                 })
 
     except Exception as e:

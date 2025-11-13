@@ -64,7 +64,8 @@ def process_directory(dir_path: str) -> Tuple[bool, str]:
                 labeled_trace_data.append({
                     'trace': trace,
                     'label': label,
-                    'gate': center_gate
+                    'gate': center_gate,
+                    'circuit': folder_name
                 })
 
     except Exception as e:
