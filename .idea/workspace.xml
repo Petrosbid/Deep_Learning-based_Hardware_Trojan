@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update">
-      <change beforePath="$PROJECT_DIR$/Persian/count_jsonl_lines.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/dataset_upldated.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/dataset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/evaluate.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/evaluate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/graph_visualizer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/train_detector_updated.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/train_detector_updated.py" afterDir="false" />
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="add English Code">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -159,7 +154,23 @@
       <option name="project" value="LOCAL" />
       <updated>1763149400663</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="update">
+      <option name="closed" value="true" />
+      <created>1763149627131</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1763149627131</updated>
+    </task>
+    <task id="LOCAL-00010" summary="add English Code">
+      <option name="closed" value="true" />
+      <created>1763150665943</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1763150665943</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -168,6 +179,7 @@
     <MESSAGE value="complete phase 2" />
     <MESSAGE value="upload app" />
     <MESSAGE value="update" />
-    <option name="LAST_COMMIT_MESSAGE" value="update" />
+    <MESSAGE value="add English Code" />
+    <option name="LAST_COMMIT_MESSAGE" value="add English Code" />
   </component>
 </project>
