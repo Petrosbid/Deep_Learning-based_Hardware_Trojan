@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update">
+      <change afterPath="$PROJECT_DIR$/detector.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/process_originals.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_originals.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_batch_extraction.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_batch_extraction.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/phase1_graph_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/phase1_graph_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,7 +49,9 @@
     "Python.Netlist_Parser_scripts.executor": "Run",
     "Python.cleaner.executor": "Run",
     "Python.count_jsonl_lines.executor": "Run",
+    "Python.create_balanced_dataset.executor": "Run",
     "Python.dataset_upldated.executor": "Run",
+    "Python.detector.executor": "Run",
     "Python.evaluate.executor": "Run",
     "Python.graph_visualizer.executor": "Run",
     "Python.original_designs_Netlist_Parser_scripts.executor": "Run",
@@ -59,6 +61,7 @@
     "Python.test.executor": "Run",
     "Python.train_detector.executor": "Run",
     "Python.train_detector_updated.executor": "Run",
+    "Python.train_nlp.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -115,7 +118,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763056850885</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="update">
+      <option name="closed" value="true" />
+      <created>1763059628417</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1763059628418</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

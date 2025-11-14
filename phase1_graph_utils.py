@@ -14,6 +14,7 @@ from netlist_parser import Netlist, Gate  # وارد کردن از فایل قب
 def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
     """
     نت‌لیست را به یک گراف پین-به-پین واقعی (مطابق شکل 3c) تبدیل می‌کند.
+    (نسخه اصلاح شده با فرض هوشمندتر برای تشخیص پین)
     """
     G = nx.DiGraph()
     wire_to_pins_map = {}
@@ -30,11 +31,23 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
 
     # 2. اضافه کردن گره‌های Cell و Pin و یال‌های داخلی آنها
     for gate_name, gate_obj in netlist.gates.items():
-        G.add_node(gate_name, type='Cell', cell_type=gate_obj.cell_type, is_trojan=gate_obj.is_trojan)
+        # is_trojan=False چون در حالت تشخیص هستیم
+        G.add_node(gate_name, type='Cell', cell_type=gate_obj.cell_type, is_trojan=False)
+
         for port, wire in gate_obj.connections.items():
             pin_name = f"{gate_name}___{port}"
-            # فرض ساده‌سازی شده برای تشخیص جهت پین
-            is_output_port = port.upper().startswith('Q') or port.upper() == 'O'
+
+            # --- ✨✨✨ کد اصلاح شده ✨✨✨ ---
+            # فرض هوشمندتر برای تشخیص پین‌های خروجی
+            port_name_upper = port.upper()
+            is_output_port = (
+                    port_name_upper.startswith('Q') or  # برای فلیپ‌فلاپ‌ها (Q, QN)
+                    port_name_upper == 'O' or  # نام‌های رایج خروجی
+                    port_name_upper == 'Y' or  # (O, Y, Z, ZN)
+                    port_name_upper == 'Z' or
+                    port_name_upper == 'ZN'
+            )
+            # --- ✨✨✨ پایان اصلاح ✨✨✨ ---
 
             if is_output_port:
                 G.add_node(pin_name, type='Pin_Output')
