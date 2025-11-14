@@ -11,7 +11,7 @@ import time
 import json
 
 # وارد کردن کلاس‌های سفارشی
-from dataset_upldated import TrojanDataset, LABELED_DATA_FILE, EMBEDDING_FILE
+from dataset import TrojanDataset, LABELED_DATA_FILE, EMBEDDING_FILE
 from model import TrojanLSTM
 
 # --- تنظیمات ---

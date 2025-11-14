@@ -13,10 +13,10 @@ import random
 
 # وارد کردن کلاس‌های سفارشی
 try:
-    from dataset_upldated import TrojanDataset, LABELED_DATA_FILE, EMBEDDING_FILE
+    from dataset import TrojanDataset, LABELED_DATA_FILE, EMBEDDING_FILE
     from model import TrojanLSTM
 except ImportError:
-    print("❌ خطا: مطمئن شوید فایل‌های dataset_upldated.py و model.py در همین پوشه قرار دارند.")
+    print("❌ خطا: مطمئن شوید فایل‌های dataset.py و model.py در همین پوشه قرار دارند.")
     exit()
 
 # --- تنظیمات ---
