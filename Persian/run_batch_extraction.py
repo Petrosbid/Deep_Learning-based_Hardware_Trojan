@@ -1,19 +1,12 @@
-#
-# run_batch_extraction.py
-#
 import os
 import json
 import glob
 import time
-import networkx as nx
 import pickle
 from typing import Tuple
 
 import netlist_parser
-import phase1_graph_utils  # <--- اکنون توابع واقعی را دارد
-
-# --- ✨ کنترل اجرای مجدد ✨ ---
-# چون الگوریتم 2 را پیاده‌سازی کردیم، باید همه را دوباره اجرا کنیم
+import phase1_graph_utils
 FORCE_RERUN = True
 
 
@@ -40,13 +33,10 @@ def process_directory(dir_path: str) -> Tuple[bool, str]:
         if netlist is None:
             return (False, "Parse Error: Netlist is empty or failed to parse")
 
-        # فاز 1: TODO 1 (واقعی)
         pin_graph = phase1_graph_utils.convert_to_pin_graph(netlist)
 
-        # فاز 1: TODO 2 (واقعی)
         net_blocks = phase1_graph_utils.generate_netlist_blocks(pin_graph, logic_level=4)
 
-        # فاز 1: TODO 3 (واقعی) <--- ✨ تغییر کلیدی ✨
         all_traces_dict = phase1_graph_utils.extract_pcp_traces(net_blocks)
 
         # ذخیره گراف
@@ -81,7 +71,6 @@ def process_directory(dir_path: str) -> Tuple[bool, str]:
     return (True, f"Success (Saved {len(labeled_trace_data)} traces and 1 graph)")
 
 
-# --- تابع main (بدون تغییر) ---
 def main():
     DATASET_ROOT = "../Dataset"
     target_folders = ["TRIT-TC", "TRIT-TS"]

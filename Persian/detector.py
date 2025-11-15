@@ -27,18 +27,7 @@ EMBEDDING_DIM = 100
 BATCH_SIZE = 128
 NUM_WORKERS = 0
 
-# ##################################################################
-# ########## ✨ (ارتقا یافته) کتابخانه سلول ✨ ###################
-# ##################################################################
-# این کتابخانه اکنون فقط شامل گیت‌های *صریح* (از داده‌های آموزشی) است.
-# گیت‌های ضمنی (مانند and, or, not) به صورت پویا اضافه خواهند شد.
-# ##################################################################
-# ########## ✨ (نهایی) کتابخانه سلول استاندارد ✨ ################
-# ##################################################################
-# این کتابخانه اکنون شامل تعاریف گیت‌های TRIT, ISCAS و کتابخانه جدید (SAED) است
 CELL_LIBRARY = {
-    # --- (جدید) گیت‌های کتابخانه SAED (مانند s38417_T0099_C.v) ---
-    # گیت‌های ساده
     'inv_1': (['O'], ['I']),
     'nand2_1': (['O'], ['I0', 'I1']),
     'nand3_1': (['O'], ['I0', 'I1', 'I2']),
@@ -50,7 +39,6 @@ CELL_LIBRARY = {
     'and3_1': (['O'], ['I0', 'I1', 'I2']),
     'xor2_1': (['O'], ['I0', 'I1']),
 
-    # گیت‌های پیچیده (AOI/OAI/MUX)
     'mux2i_1': (['O'], ['I0', 'I1', 'S']),  # 2-input MUX
     'a21oi_1': (['O'], ['A1', 'A2', 'B1']),  # (A1&A2) | B1 -> Inverted
     'a22oi_1': (['O'], ['A1', 'A2', 'B1', 'B2']),  # (A1&A2) | (B1&B2) -> Inverted
@@ -212,29 +200,22 @@ def parse_netlist(netlist_file_path: str) -> Optional[Netlist]:
                         for port_match in re_port_conn.finditer(connections_str):
                             gate_obj.add_connection(port_match.group(1), port_match.group(2))
                     else:
-                        # --- 2. حالت ضمنی (مانند s713.v) ---
                         wires = [w.strip() for w in connections_str.split(',') if w.strip()]
 
-                        if not wires: continue  # گیت بدون اتصال
-
-                        # --- ✨ منطق پویا: فرض کن اولی خروجی است، بقیه ورودی ---
+                        if not wires: continue
                         output_pin_name = "O"
                         gate_obj.add_connection(output_pin_name, wires[0])
 
                         input_pins = []
                         for i, input_wire in enumerate(wires[1:]):
-                            input_pin_name = f"I{i}"  # نام‌گذاری پویا: I0, I1, I2, ...
+                            input_pin_name = f"I{i}"
                             gate_obj.add_connection(input_pin_name, input_wire)
                             input_pins.append(input_pin_name)
 
-                        # --- ✨ کتابخانه را به صورت پویا به‌روز کن ---
-                        # (فقط اگر این نوع گیت را قبلاً ندیده‌ایم)
                         if cell_type not in CELL_LIBRARY:
-                            # print(f"  ⓘ اطلاعات: گیت جدید '{cell_type}' با {len(input_pins)} ورودی پیدا شد.")
                             CELL_LIBRARY[cell_type] = ([output_pin_name], input_pins)
 
                     netlist_obj.add_gate(gate_obj)
-                    # --- ✨✨✨ پایان منطق پارسر پویا ✨✨✨ ---
                     continue
         if netlist_obj and len(netlist_obj.gates) > 0:
             return netlist_obj
@@ -267,13 +248,9 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
         cell_type = gate_obj.cell_type
         G.add_node(gate_name, type='Cell', cell_type=cell_type, is_trojan=False)
 
-        # --- ✨✨✨ شروع منطق ارتقا یافته گراف ✨✨✨ ---
-        # دریافت تعریف پین‌ها از کتابخانه (که اکنون پویا است)
         output_pins, input_pins = CELL_LIBRARY.get(cell_type, ([], []))
 
         if not output_pins and not input_pins:
-            # این اتفاق نباید بیفتد چون پارسر باید آن را اضافه کرده باشد
-            # اما برای ایمنی، از گیت‌های ناشناخته رد می‌شویم
             print(f"  ⚠️ هشدار: گیت '{gate_name}' ({cell_type}) در کتابخانه تعریف نشده. نادیده گرفته شد.")
             continue
 
@@ -290,7 +267,6 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
                 G.add_edge(pin_name, gate_name)
                 if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
                 wire_to_pins_map[wire]['sinks'].append(pin_name)
-        # --- ✨✨✨ پایان منطق ارتقا یافته گراف ✨✨✨ ---
 
     for wire, pins in wire_to_pins_map.items():
         source_pin = pins['source_pin']
@@ -301,8 +277,6 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
     return G
 
 
-# --- (توابع _recursion, generate_netlist_blocks, _find_all_root_to_leaf_paths) ---
-# --- (این توابع بدون تغییر کپی می‌شوند) ---
 def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth: int, Direction: str) -> List[Dict]:
     if remaining_depth <= 0: return []
     current_logic_level = (max_depth - remaining_depth) + 1;
@@ -375,18 +349,13 @@ def extract_pcp_traces(netlist_blocks: Dict) -> Dict[str, List[List[str]]]:
     all_traces_map = {}
 
     def create_pcp_word(v_in_p: str, v_c: str, v_out_p: str) -> str:
-        # استخراج نام کوتاه پین‌ها
         v_in_p_short = v_in_p.split('___')[-1]
         v_out_p_short = v_out_p.split('___')[-1]
 
-        # دریافت نوع سلول (cell_type)
         v_c_type = "Unknown"
         if netlist_obj and v_c in netlist_obj.gates:
             v_c_type = netlist_obj.gates[v_c].cell_type
 
-        # --- ✨ (جدید) نرمال‌سازی نام سلول‌ها ---
-        # "کلمه" باید با کلماتی که مدل روی آن‌ها آموزش دیده مطابقت داشته باشد
-        # ما همه 'and', 'and2', 'and3', 'and4' را به 'and_base' نگاشت می‌کنیم
         if 'and' in v_c_type: v_c_type = 'and_base'
         if 'or' in v_c_type: v_c_type = 'or_base'
         if 'nand' in v_c_type: v_c_type = 'nand_base'

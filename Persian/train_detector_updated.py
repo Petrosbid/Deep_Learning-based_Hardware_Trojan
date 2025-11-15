@@ -19,11 +19,8 @@ BATCH_SIZE = 8
 LEARNING_RATE = 0.001
 NUM_EPOCHS = 5
 TRAIN_SPLIT = 0.8
-OUTPUT_MODEL_FILE = "../Model/trojan_detector_final.pth"  # نام جدید
+OUTPUT_MODEL_FILE = "../Model/trojan_detector_final.pth"
 
-# --- ✨✨✨ مهم‌ترین تغییر برای 16GB RAM ✨✨✨ ---
-# تنظیم 0 باعث می‌شود که DataLoader هیچ پردازش جدیدی ایجاد نکند
-# و از کپی کردن 7 میلیون نمونه در RAM جلوگیری می‌کند.
 NUM_WORKERS = 1
 
 
@@ -40,8 +37,6 @@ def get_unique_circuits(data_file):
         for line in tqdm(f, desc="🔍 یافتن مدارها"):
             try:
                 if line.strip():
-                    # --- ✨ اصلاح برای خواندن از دیتاست جدید ---
-                    # (فرض می‌کنیم دیتاست جدید ساخته شده با کد قبلی)
                     circuits.add(json.loads(line)['circuit'])
             except (json.JSONDecodeError, KeyError):
                 pass
@@ -57,15 +52,12 @@ def main():
     if device.type == 'cuda':
         print(f"نام GPU: {torch.cuda.get_device_name(0)}")
 
-    # --- 1. بارگذاری دیتاست (نسخه جدید "load-all-in-RAM") ---
     try:
         full_dataset = TrojanDataset(LABELED_DATA_FILE, EMBEDDING_FILE)
     except FileNotFoundError as e:
         print(e)
         return
 
-    # --- 2. تقسیم‌بندی 80/20 (روش قدیمی اما برای این کار کافیست) ---
-    # (توجه: این همچنان مشکل "نشت داده" را دارد، اما اول باید مدل را اجرا کنیم)
     total_size = len(full_dataset)
     train_size = int(total_size * TRAIN_SPLIT)
     val_size = total_size - train_size
@@ -77,7 +69,6 @@ def main():
     print(f"نمونه‌های آموزشی (Train): {len(train_dataset):,}")
     print(f"نمونه‌های اعتبارسنجی (Validation): {len(val_dataset):,}")
 
-    # --- 3. ساخت DataLoader ها (با num_workers=0) ---
     print(f"--- ❗ استفاده از num_workers={NUM_WORKERS} (برای جلوگیری از قفل شدن RAM) ---")
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=BATCH_SIZE,
@@ -89,9 +80,8 @@ def main():
                             shuffle=False,
                             num_workers=NUM_WORKERS)  # 0
 
-    # --- 4. آموزش مدل (بدون تغییر) ---
     model = TrojanLSTM().to(device)
-    criterion = nn.CrossEntropyLoss()  # این دیگر نباید کرش کند
+    criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     print("\n--- 🏋️ شروع آموزش مدل LSTM ---")
@@ -101,7 +91,6 @@ def main():
     for epoch in range(NUM_EPOCHS):
         start_epoch_time = time.time()
 
-        # --- بخش آموزش ---
         model.train()
         train_loss = 0.0
         train_corrects = 0.0
@@ -112,7 +101,7 @@ def main():
 
             outputs = model(traces)
             loss = criterion(outputs, labels)
-            loss = loss / ACCUM_STEPS  # نرمال‌سازی
+            loss = loss / ACCUM_STEPS
 
             loss.backward()
 
@@ -124,7 +113,6 @@ def main():
             _, preds = torch.max(outputs, 1)
             train_corrects += torch.sum(preds == labels.data).item()
 
-        # --- بخش اعتبارسنجی ---
         model.eval()
         val_loss = 0.0
         val_corrects = 0.0

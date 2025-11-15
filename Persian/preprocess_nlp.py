@@ -1,7 +1,3 @@
-#
-# preprocess_nlp.py
-# (فاز 2: جمع‌آوری تمام داده‌های فاز 1 برای آموزش NLP و DL)
-#
 import os
 import glob
 import json
@@ -49,8 +45,6 @@ def build_comprehensive_datasets_streaming(
     """
     total_traces_processed = 0
 
-    # --- ✨ استفاده از tqdm برای نوار پیشرفت ✨ ---
-    # desc="..." متنی است که کنار نوار پیشرفت نمایش داده می‌شود
     print(f"Processing {len(trace_files)} files...")
     for filepath in tqdm(trace_files, desc="📊 Processing JSON files", unit="file"):
 
@@ -65,11 +59,8 @@ def build_comprehensive_datasets_streaming(
             for item in traces_in_file:
                 if 'trace' in item and 'label' in item and 'gate' in item:
 
-                    # 1. نوشتن جمله در فایل corpus (فرمت jsonl)
-                    # (فقط خود جمله، بدون indent برای صرفه‌جویی در فضا)
                     corpus_file_handle.write(json.dumps(item['trace']) + "\n")
 
-                    # 2. نوشتن آبجکت کامل در فایل داده‌های برچسب‌دار (فرمت jsonl)
                     labeled_file_handle.write(json.dumps(item) + "\n")
 
                     total_traces_processed += 1
@@ -87,7 +78,6 @@ def build_comprehensive_datasets_streaming(
 def main():
     start_time = time.time()
 
-    # 1. پیدا کردن تمام فایل‌های JSON
     all_json_files = find_all_trace_files(DATASET_ROOTS)
 
     if not all_json_files:
@@ -96,9 +86,7 @@ def main():
 
     print(f"✅ {len(all_json_files)} فایل _traces.json پیدا شد.")
 
-    # 2. ساخت دیتاست‌های جامع (به روش جریانی)
     try:
-        # فایل‌های خروجی را باز می‌کنیم
         with open(CORPUS_OUTPUT_FILE, 'w', encoding='utf-8') as corpus_f, \
                 open(LABELED_DATA_OUTPUT_FILE, 'w', encoding='utf-8') as labeled_f:
 

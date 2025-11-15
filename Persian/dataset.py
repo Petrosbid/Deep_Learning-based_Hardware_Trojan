@@ -49,8 +49,7 @@ class TrojanDataset(Dataset):
 
         print(f"--- 2. در حال خواندن و فیلتر کردن {data_file} (در RAM)...")
 
-        self.data = []  # تمام داده‌ها در اینجا بارگذاری می‌شوند
-
+        self.data = []
         with open(self.data_file, 'r', encoding='utf-8') as f:
             for line in tqdm(f, desc="📊 خواندن و فیلتر کردن", unit="L"):
                 try:
@@ -58,19 +57,13 @@ class TrojanDataset(Dataset):
                     if line_stripped:
                         item = json.loads(line_stripped)
 
-                        # --- ✨✨✨ منطق فیلتر کردن (جلوگیری از نشت داده) ✨✨✨ ---
                         if allowed_circuits_list is not None:
-                            # اگر لیست فیلتر وجود دارد، بررسی کن که آیا مدار این آیتم
-                            # در لیست مجاز هست یا نه
                             if item.get('circuit') in allowed_circuits_list:
                                 self.data.append(item)
                         else:
-                            # اگر لیست فیلتری وجود ندارد، همه را اضافه کن
                             self.data.append(item)
-                        # --- پایان منطق فیلتر ---
 
                 except (json.JSONDecodeError, KeyError):
-                    # از خطوط خراب یا فاقد کلید 'circuit' رد شو
                     tqdm.write(f"⚠️ خط خراب نادیده گرفته شد: {line_stripped[:50]}...")
 
         self.total_samples = len(self.data)
@@ -107,16 +100,13 @@ class TrojanDataset(Dataset):
         }
 
 
-# ... (بخش __main__ برای تست) ...
 if __name__ == "__main__":
     print("--- 🧪 شروع تست TrojanDataset (نسخه نهایی و اصلاح شده) ---")
     try:
-        # تست بارگذاری بدون فیلتر
         print("\n--- تست بارگذاری (بدون فیلتر) ---")
         dataset_full = TrojanDataset(LABELED_DATA_FILE, EMBEDDING_FILE)
         print(f"تعداد کل نمونه‌ها: {len(dataset_full):,}")
 
-        # تست بارگذاری با فیلتر (فرض می‌کنیم مداری به نام 'c2670_T001' وجود دارد)
         print("\n--- تست بارگذاری (با فیلتر) ---")
         dataset_filtered = TrojanDataset(LABELED_DATA_FILE, EMBEDDING_FILE, allowed_circuits_list={'c2670_T001'})
         print(f"نمونه‌های فیلتر شده: {len(dataset_filtered):,}")

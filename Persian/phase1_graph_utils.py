@@ -1,15 +1,8 @@
-#
-# phase1_graph_utils.py
-# (فاز 1: تبدیل به گراف پین-به-پین و استخراج ویژگی)
-#
 import networkx as nx
 from typing import List, Dict, Set, Tuple, Any
-from netlist_parser import Netlist, Gate  # وارد کردن از فایل قبلی
-
-
+from netlist_parser import Netlist, Gate
 # ##################################################################
 # ########## TODO 1: پیاده‌سازی واقعی Cell-Pin Splitter #########
-# ########## (بدون تغییر) ########################################
 # ##################################################################
 def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
     """
@@ -31,23 +24,19 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
 
     # 2. اضافه کردن گره‌های Cell و Pin و یال‌های داخلی آنها
     for gate_name, gate_obj in netlist.gates.items():
-        # is_trojan=False چون در حالت تشخیص هستیم
         G.add_node(gate_name, type='Cell', cell_type=gate_obj.cell_type, is_trojan=False)
 
         for port, wire in gate_obj.connections.items():
             pin_name = f"{gate_name}___{port}"
 
-            # --- ✨✨✨ کد اصلاح شده ✨✨✨ ---
-            # فرض هوشمندتر برای تشخیص پین‌های خروجی
             port_name_upper = port.upper()
             is_output_port = (
-                    port_name_upper.startswith('Q') or  # برای فلیپ‌فلاپ‌ها (Q, QN)
-                    port_name_upper == 'O' or  # نام‌های رایج خروجی
-                    port_name_upper == 'Y' or  # (O, Y, Z, ZN)
+                    port_name_upper.startswith('Q') or
+                    port_name_upper == 'O' or
+                    port_name_upper == 'Y' or
                     port_name_upper == 'Z' or
                     port_name_upper == 'ZN'
             )
-            # --- ✨✨✨ پایان اصلاح ✨✨✨ ---
 
             if is_output_port:
                 G.add_node(pin_name, type='Pin_Output')
@@ -75,7 +64,6 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
 
 # ##################################################################
 # ########## TODO 2: پیاده‌سازی واقعی الگوریتم 1 #########
-# ########## (بدون تغییر) ########################################
 # ##################################################################
 def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth: int, Direction: str) -> List[Dict]:
     """
@@ -87,15 +75,13 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
     found_nets = []
 
     if Direction == 'I':
-        # جستجو در سمت ورودی (عقبگرد)
         try:
             input_pins = list(G.predecessors(current_cell))
-            for vp in input_pins:  # vp = Current Input Pin
+            for vp in input_pins:
                 source_pins = list(G.predecessors(vp))
-                for vp_prime in source_pins:  # vp' = Next Output Pin
+                for vp_prime in source_pins:
                     next_cells = list(G.predecessors(vp_prime))
-                    for vc_prime in next_cells:  # vc' = Next Cell
-                        # داده‌های نت مطابق با مقاله
+                    for vc_prime in next_cells:
                         net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level]
                         net_info = {
                             'net': net_data,
@@ -103,18 +89,16 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
                         }
                         found_nets.append(net_info)
         except nx.NetworkXError:
-            pass  # گره ترمینال
+            pass
 
     elif Direction == 'O':
-        # جستجو در سمت خروجی (پیشرو)
         try:
             output_pins = list(G.successors(current_cell))
-            for vp in output_pins:  # vp = Current Output Pin
+            for vp in output_pins:
                 sink_pins = list(G.successors(vp))
-                for vp_prime in sink_pins:  # vp' = Next Input Pin
+                for vp_prime in sink_pins:
                     next_cells = list(G.successors(vp_prime))
-                    for vc_prime in next_cells:  # vc' = Next Cell
-                        # داده‌های نت مطابق با مقاله
+                    for vc_prime in next_cells:
                         net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level]
                         net_info = {
                             'net': net_data,
@@ -122,7 +106,7 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
                         }
                         found_nets.append(net_info)
         except nx.NetworkXError:
-            pass  # گره ترمینال
+            pass
 
     return found_nets
 
@@ -134,7 +118,7 @@ def generate_netlist_blocks(pin_graph: nx.DiGraph, logic_level: int = 4) -> Dict
     all_blocks = {}
     cell_nodes = [n for n, d in pin_graph.nodes(data=True) if d.get('type') == 'Cell']
 
-    for vc in cell_nodes:  # vc = گیت مرکزی
+    for vc in cell_nodes:
         block_tree = {
             'I': _recursion(pin_graph, vc, logic_level, logic_level, 'I'),
             'O': _recursion(pin_graph, vc, logic_level, logic_level, 'O')
@@ -156,21 +140,16 @@ def _find_all_root_to_leaf_paths(node_list: List[Dict]) -> List[List[List[Any]]]
     all_paths = []
 
     def dfs(node: Dict, current_path: List[List[Any]]):
-        # 1. نت فعلی را به مسیر اضافه کن
         current_path.append(node['net'])
 
-        # 2. اگر برگ بود (فرزندی نداشت)، مسیر کامل را ذخیره کن
         if not node['children']:
-            all_paths.append(list(current_path))  # یک کپی از مسیر را ذخیره کن
+            all_paths.append(list(current_path))
         else:
-            # 3. اگر برگ نبود، به جستجو در فرزندان ادامه بده
             for child in node['children']:
                 dfs(child, current_path)
 
-        # 4. بک‌ترک (Backtrack): نت فعلی را از مسیر حذف کن تا شاخه‌های دیگر بررسی شوند
         current_path.pop()
 
-    # DFS را برای هر درخت در جنگل (لیست) شروع کن
     for root_node in node_list:
         dfs(root_node, [])
 
@@ -184,7 +163,6 @@ def extract_pcp_traces(netlist_blocks: Dict) -> Dict[str, List[List[str]]]:
     """
     all_traces_map = {}
 
-    # فرمت "کلمه" PCP مطابق با مقاله
     # ما از "___" به جای "_" برای جداسازی استفاده می‌کنیم تا از ابهام جلوگیری شود
     def create_pcp_word(v_in_p: str, v_c: str, v_out_p: str) -> str:
         return f"{v_in_p}___{v_c}___{v_out_p}"

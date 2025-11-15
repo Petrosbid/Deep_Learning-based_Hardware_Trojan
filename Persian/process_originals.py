@@ -1,16 +1,10 @@
-#
-# process_originals.py
-# (اسکریپت پردازش فایل‌های سالم در original_designs)
-#
 import os
 import json
 import glob
 import time
-import networkx as nx
-import pickle  # <--- + وارد کردن کتابخانه pickle
+import pickle
 from typing import Tuple
 
-# وارد کردن توابع از فایل‌های مجزا
 import netlist_parser
 import phase1_graph_utils
 
@@ -24,7 +18,7 @@ def process_original_file(netlist_path: str) -> Tuple[bool, str]:
         base_name = os.path.basename(netlist_path)
         circuit_name = base_name.replace('.v', '')
         dir_name = os.path.dirname(netlist_path)
-        log_path = ""  # مسیر خالی یا نامعتبر
+        log_path = ""
         json_output_file = os.path.join(dir_name, base_name.replace('.v', '_traces.json'))
         graph_output_file = os.path.join(dir_name, base_name.replace('.v', '_pin_graph.gpickle'))
 
@@ -39,25 +33,20 @@ def process_original_file(netlist_path: str) -> Tuple[bool, str]:
         # فاز 1: تبدیل به گراف
         pin_graph = phase1_graph_utils.convert_to_pin_graph(netlist)
 
-        # --- 3. (اصلاح شده) ذخیره گراف روی دیسک ---
+        # --- 3. ذخیره گراف روی دیسک ---
         try:
-            # - nx.write_gpickle(pin_graph, graph_output_file)
-            with open(graph_output_file, 'wb') as f:  # <--- + باز کردن فایل در حالت نوشتن باینری
-                pickle.dump(pin_graph, f)  # <--- + استفاده از pickle.dump
+            with open(graph_output_file, 'wb') as f:
+                pickle.dump(pin_graph, f)
         except Exception as e:
             return (False, f"Graph Save Error: {e}")
-        # -------------------------------------
 
-        # فاز 1: (شبیه‌سازی شده) استخراج بلوک‌ها
         net_blocks = phase1_graph_utils.generate_netlist_blocks(pin_graph, logic_level=4)
 
-        # فاز 1: (شبیه‌سازی شده) استخراج ردیابی‌ها
         all_traces_dict = phase1_graph_utils.extract_pcp_traces(net_blocks)
 
-        # --- 4. آماده‌سازی داده‌های خروجی (همه با برچسب 0) ---
         labeled_trace_data = []
         for center_gate, traces in all_traces_dict.items():
-            label = 0  # همیشه 0 چون تروجانی در کار نیست
+            label = 0
             for trace in traces:
                 labeled_trace_data.append({
                     'trace': trace,
@@ -79,7 +68,6 @@ def process_original_file(netlist_path: str) -> Tuple[bool, str]:
     return (True, f"Success (Saved {len(labeled_trace_data)} traces and 1 graph)")
 
 
-# --- تابع main بدون تغییر باقی می‌ماند ---
 def main():
     DATASET_ROOT = "../Dataset"
     target_folders = ["TRIT-TC/original_designs", "TRIT-TS/original_designs"]

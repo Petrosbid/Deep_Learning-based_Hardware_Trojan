@@ -1,7 +1,3 @@
-#
-# netlist_parser.py
-# (فاز 0: ابزارهای پارس کردن نت‌لیست و لاگ)
-#
 import re
 from typing import List, Dict, Set, Optional
 
@@ -32,8 +28,7 @@ class Netlist:
         self.inputs = set()
         self.outputs = set()
         self.wires = set()
-        self.gates = {}  # {instance_name: Gate_Object}
-
+        self.gates = {}
     def add_gate(self, gate_obj):
         self.gates[gate_obj.instance_name] = gate_obj
 
@@ -52,7 +47,7 @@ def parse_trojan_log(log_file_path: str) -> Set[str]:
             content = f.read()
 
         body_match = re.search(r'TROJAN BODY:\s*(.*)', content, re.DOTALL)
-        if not body_match: return trojan_gate_names  # لاگ وجود دارد اما بدنه تروجان خالی است
+        if not body_match: return trojan_gate_names
 
         body = body_match.group(1)
         gate_regex = re.compile(r'^\s*[\w\d]+s\d+\s+([\w\d_]+)\s*\(')
@@ -64,7 +59,7 @@ def parse_trojan_log(log_file_path: str) -> Set[str]:
                 trojan_gate_names.add(instance_name)
 
     except FileNotFoundError:
-        pass  # طبیعی است برای original_designs
+        pass
     except Exception as e:
         print(f"\n[Warning] Error parsing log {log_file_path}: {e}")
 
@@ -143,7 +138,7 @@ def parse_netlist(netlist_file_path: str, trojan_gate_names: Set[str]) -> Option
         if netlist_obj and len(netlist_obj.gates) > 0:
             return netlist_obj
         else:
-            return None  # پارس ناموفق بود یا فایل خالی بود
+            return None
     except FileNotFoundError:
         print(f"\n[Error] Netlist file not found: {netlist_file_path}")
         return None

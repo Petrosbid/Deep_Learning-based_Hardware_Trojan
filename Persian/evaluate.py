@@ -53,29 +53,24 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"--- 🚀 در حال استفاده از دستگاه: {device} ---")
 
-    # --- ✨ 1. (جدید) بازسازی دقیق تقسیم‌بندی بر اساس مدار ---
     all_circuits = get_unique_circuits(LABELED_DATA_FILE)
-    random.shuffle(all_circuits)  # seed=42 تضمین می‌کند که ترتیب یکسان است
+    random.shuffle(all_circuits)
 
     split_index = int(len(all_circuits) * TRAIN_SPLIT)
-    # ما فقط به مدارهای تست (اعتبارسنجی) نیاز داریم
     val_circuit_names = set(all_circuits[split_index:])
 
     print(f"\n--- 📊 بارگذاری مجموعه اعتبارسنجی (Test Set) ---")
     print(f"تعداد کل مدارهای تست: {len(val_circuit_names)}")
 
-    # --- 2. (جدید) ساخت دیتاست فقط برای مدارهای تست ---
     print("\n(بارگذاری دیتاست اعتبارسنجی...)")
     val_dataset = TrojanDataset(LABELED_DATA_FILE, EMBEDDING_FILE,
                                 allowed_circuits_list=val_circuit_names)
 
     print(f"کل ردیابی‌های تست: {len(val_dataset):,}")
 
-    # 3. ساخت DataLoader برای تست
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False,
                             num_workers=NUM_WORKERS, persistent_workers=True, pin_memory=True)
 
-    # 4. بارگذاری مدل آموزش‌دیده (مدل جدید)
     try:
         model = TrojanLSTM().to(device)
         model.load_state_dict(torch.load(MODEL_FILE))
@@ -90,7 +85,6 @@ def main():
 
     print("\n--- 🔬 شروع ارزیابی (گام 10 و 11 مقاله) ---")
 
-    # 5. اجرای مدل روی داده‌های تست
     gate_votes = defaultdict(lambda: {'true_label': 0, 'votes': []})
 
     with torch.no_grad():
@@ -113,7 +107,6 @@ def main():
             preds_cpu = preds.cpu().numpy()
             labels_cpu = labels.cpu().numpy()
 
-            # 6. جمع‌آوری آراء برای VOTER
             for i in range(len(gates)):
                 gate_name = gates[i]
                 gate_votes[gate_name]['votes'].append(preds_cpu[i])

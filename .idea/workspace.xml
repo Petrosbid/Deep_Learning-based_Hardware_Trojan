@@ -4,8 +4,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="add English Code">
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/dataset.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/evaluate.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/evaluate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/netlist_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/netlist_parser.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/preprocess_nlp.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/preprocess_nlp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/process_originals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/process_originals.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/run_batch_extraction.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/run_batch_extraction.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/train_detector_updated.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/train_detector_updated.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Persian/train_nlp.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/train_nlp.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,33 +60,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Netlist_Parser_scripts.executor": "Run",
-    "Python.cleaner.executor": "Run",
-    "Python.count_jsonl_lines.executor": "Run",
-    "Python.create_balanced_dataset.executor": "Run",
-    "Python.dataset_upldated.executor": "Run",
-    "Python.detector.executor": "Run",
-    "Python.evaluate.executor": "Run",
-    "Python.graph_visualizer.executor": "Run",
-    "Python.original_designs_Netlist_Parser_scripts.executor": "Run",
-    "Python.preprocess_nlp.executor": "Run",
-    "Python.process_originals.executor": "Run",
-    "Python.run_batch_extraction.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.train_detector.executor": "Run",
-    "Python.train_detector_updated.executor": "Run",
-    "Python.train_nlp.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "D:/VHDL_AI_Project",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Netlist_Parser_scripts.executor&quot;: &quot;Run&quot;,
+    &quot;Python.cleaner.executor&quot;: &quot;Run&quot;,
+    &quot;Python.count_jsonl_lines.executor&quot;: &quot;Run&quot;,
+    &quot;Python.create_balanced_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_upldated.executor&quot;: &quot;Run&quot;,
+    &quot;Python.detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.evaluate.executor&quot;: &quot;Run&quot;,
+    &quot;Python.graph_visualizer.executor&quot;: &quot;Run&quot;,
+    &quot;Python.original_designs_Netlist_Parser_scripts.executor&quot;: &quot;Run&quot;,
+    &quot;Python.preprocess_nlp.executor&quot;: &quot;Run&quot;,
+    &quot;Python.process_originals.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_batch_extraction.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_detector_updated.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_nlp.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/VHDL_AI_Project&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -170,7 +182,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763150665943</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="update">
+      <option name="closed" value="true" />
+      <created>1763153816924</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1763153816924</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -178,8 +198,8 @@
     <MESSAGE value="complete phase 1" />
     <MESSAGE value="complete phase 2" />
     <MESSAGE value="upload app" />
-    <MESSAGE value="update" />
     <MESSAGE value="add English Code" />
-    <option name="LAST_COMMIT_MESSAGE" value="add English Code" />
+    <MESSAGE value="update" />
+    <option name="LAST_COMMIT_MESSAGE" value="update" />
   </component>
 </project>
