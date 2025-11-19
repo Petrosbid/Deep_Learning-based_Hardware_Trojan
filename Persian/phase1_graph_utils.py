@@ -1,76 +1,71 @@
 import networkx as nx
 from typing import List, Dict, Set, Tuple, Any
-from netlist_parser import Netlist, Gate
-# ##################################################################
-# ########## TODO 1: پیاده‌سازی واقعی Cell-Pin Splitter #########
-# ##################################################################
+from netlist_parser import Netlist
+
+# نگاشت پین‌ها برای استانداردسازی داده‌های آموزشی
+PIN_NORMALIZATION = {
+    'Q': 'OUT', 'QN': 'OUT', 'Q_N': 'OUT', 'Y': 'OUT', 'Z': 'OUT', 'O': 'OUT', 'SO': 'OUT',
+    'A': 'IN', 'B': 'IN', 'C': 'IN', 'D': 'IN', 'E': 'IN',
+    'DIN': 'IN', 'DIN1': 'IN', 'DIN2': 'IN', 'DIN3': 'IN', 'DIN4': 'IN',
+    'SI': 'IN', 'D0': 'IN', 'D1': 'IN',
+    'CLK': 'CLK', 'CK': 'CLK', 'RST': 'RST', 'S': 'SEL', 'SEL': 'SEL', 'EB': 'EN'
+}
+
+
+def get_normalized_pin(raw_pin: str) -> str:
+    pin = raw_pin.split('___')[-1].upper()
+    if pin in PIN_NORMALIZATION: return PIN_NORMALIZATION[pin]
+    for key, val in PIN_NORMALIZATION.items():
+        if pin.startswith(key): return val
+    if pin.startswith(('I', 'A', 'D')): return 'IN'
+    return 'OUT'
+
+
 def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
-    """
-    نت‌لیست را به یک گراف پین-به-پین واقعی (مطابق شکل 3c) تبدیل می‌کند.
-    (نسخه اصلاح شده با فرض هوشمندتر برای تشخیص پین)
-    """
     G = nx.DiGraph()
     wire_to_pins_map = {}
 
-    # 1. اضافه کردن پورت‌های ورودی/خروجی ماژول
     for port in netlist.inputs:
         G.add_node(port, type='Port_Input')
         wire_to_pins_map[port] = {'source_pin': port, 'sinks': []}
     for port in netlist.outputs:
         G.add_node(port, type='Port_Output')
-        if port not in wire_to_pins_map:
-            wire_to_pins_map[port] = {'source_pin': None, 'sinks': []}
+        if port not in wire_to_pins_map: wire_to_pins_map[port] = {'source_pin': None, 'sinks': []}
         wire_to_pins_map[port]['sinks'].append(port)
 
-    # 2. اضافه کردن گره‌های Cell و Pin و یال‌های داخلی آنها
     for gate_name, gate_obj in netlist.gates.items():
-        G.add_node(gate_name, type='Cell', cell_type=gate_obj.cell_type, is_trojan=False)
+        # استفاده از نوع تمیز شده (nand بجای nnd2s3)
+        G.add_node(gate_name, type='Cell', cell_type=gate_obj.cell_type, is_trojan=gate_obj.is_trojan)
 
-        for port, wire in gate_obj.connections.items():
+        for port in gate_obj.output_pins:
+            wire = gate_obj.connections.get(port)
+            if not wire: continue
             pin_name = f"{gate_name}___{port}"
+            G.add_node(pin_name, type='Pin_Output')
+            G.add_edge(gate_name, pin_name)
+            if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
+            wire_to_pins_map[wire]['source_pin'] = pin_name
 
-            port_name_upper = port.upper()
-            is_output_port = (
-                    port_name_upper.startswith('Q') or
-                    port_name_upper == 'O' or
-                    port_name_upper == 'Y' or
-                    port_name_upper == 'Z' or
-                    port_name_upper == 'ZN'
-            )
+        for port in gate_obj.input_pins:
+            wire = gate_obj.connections.get(port)
+            if not wire: continue
+            pin_name = f"{gate_name}___{port}"
+            G.add_node(pin_name, type='Pin_Input')
+            G.add_edge(pin_name, gate_name)
+            if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
+            wire_to_pins_map[wire]['sinks'].append(pin_name)
 
-            if is_output_port:
-                G.add_node(pin_name, type='Pin_Output')
-                G.add_edge(gate_name, pin_name)
-                if wire not in wire_to_pins_map:
-                    wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
-                wire_to_pins_map[wire]['source_pin'] = pin_name
-            else:
-                G.add_node(pin_name, type='Pin_Input')
-                G.add_edge(pin_name, gate_name)
-                if wire not in wire_to_pins_map:
-                    wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
-                wire_to_pins_map[wire]['sinks'].append(pin_name)
-
-    # 3. اتصال پین‌ها به یکدیگر بر اساس سیم‌ها
     for wire, pins in wire_to_pins_map.items():
-        source_pin = pins['source_pin']
-        if source_pin:
-            for sink_pin in pins['sinks']:
-                if G.has_node(source_pin) and G.has_node(sink_pin):
-                    G.add_edge(source_pin, sink_pin)
-
+        source = pins['source_pin']
+        if source:
+            for sink in pins['sinks']:
+                if G.has_node(source) and G.has_node(sink):
+                    G.add_edge(source, sink)
     return G
 
 
-# ##################################################################
-# ########## TODO 2: پیاده‌سازی واقعی الگوریتم 1 #########
-# ##################################################################
 def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth: int, Direction: str) -> List[Dict]:
-    """
-    تابع کمکی بازگشتی برای generate_netlist_blocks (پیاده‌سازی RECURSION از Alg 1)
-    """
     if remaining_depth <= 0: return []
-
     current_logic_level = (max_depth - remaining_depth) + 1
     found_nets = []
 
@@ -82,15 +77,15 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
                 for vp_prime in source_pins:
                     next_cells = list(G.predecessors(vp_prime))
                     for vc_prime in next_cells:
-                        net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level]
-                        net_info = {
-                            'net': net_data,
-                            'children': _recursion(G, vc_prime, remaining_depth - 1, max_depth, 'I')
-                        }
+                        if G.nodes[vc_prime].get('type') != 'Cell': continue
+                        # ذخیره نوع سلول در تاپل برای استفاده بعدی
+                        cell_type = G.nodes[vc_prime].get('cell_type', 'unknown')
+                        net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level, cell_type]
+                        net_info = {'net': net_data,
+                                    'children': _recursion(G, vc_prime, remaining_depth - 1, max_depth, 'I')}
                         found_nets.append(net_info)
-        except nx.NetworkXError:
+        except:
             pass
-
     elif Direction == 'O':
         try:
             output_pins = list(G.successors(current_cell))
@@ -99,133 +94,79 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
                 for vp_prime in sink_pins:
                     next_cells = list(G.successors(vp_prime))
                     for vc_prime in next_cells:
-                        net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level]
-                        net_info = {
-                            'net': net_data,
-                            'children': _recursion(G, vc_prime, remaining_depth - 1, max_depth, 'O')
-                        }
+                        if G.nodes[vc_prime].get('type') != 'Cell': continue
+                        cell_type = G.nodes[vc_prime].get('cell_type', 'unknown')
+                        net_data = [vc_prime, vp_prime, vp, current_cell, current_logic_level, cell_type]
+                        net_info = {'net': net_data,
+                                    'children': _recursion(G, vc_prime, remaining_depth - 1, max_depth, 'O')}
                         found_nets.append(net_info)
-        except nx.NetworkXError:
+        except:
             pass
-
     return found_nets
 
 
 def generate_netlist_blocks(pin_graph: nx.DiGraph, logic_level: int = 4) -> Dict:
-    """
-    پیاده‌سازی واقعی الگوریتم 1 مقاله.
-    """
     all_blocks = {}
     cell_nodes = [n for n, d in pin_graph.nodes(data=True) if d.get('type') == 'Cell']
-
     for vc in cell_nodes:
-        block_tree = {
+        all_blocks[vc] = {
             'I': _recursion(pin_graph, vc, logic_level, logic_level, 'I'),
-            'O': _recursion(pin_graph, vc, logic_level, logic_level, 'O')
+            'O': _recursion(pin_graph, vc, logic_level, logic_level, 'O'),
+            'center_type': pin_graph.nodes[vc].get('cell_type', 'unknown')
         }
-        all_blocks[vc] = block_tree
-
     return all_blocks
 
 
-# ##################################################################
-# ########## ✨ TODO 3: پیاده‌سازی واقعی الگوریتم 2 ✨ #########
-# ##################################################################
-
-def _find_all_root_to_leaf_paths(node_list: List[Dict]) -> List[List[List[Any]]]:
-    """
-    تابع کمکی DFS برای پیاده‌سازی بخش FLATTEN الگوریتم 2.
-    تمام مسیرهای ریشه-به-برگ را در جنگل بلوک نت‌لیست پیدا می‌کند.
-    """
+def _find_paths(node_list):
     all_paths = []
 
-    def dfs(node: Dict, current_path: List[List[Any]]):
+    def dfs(node, current_path):
         current_path.append(node['net'])
-
         if not node['children']:
             all_paths.append(list(current_path))
         else:
-            for child in node['children']:
-                dfs(child, current_path)
-
+            for child in node['children']: dfs(child, current_path)
         current_path.pop()
 
-    for root_node in node_list:
-        dfs(root_node, [])
-
+    for root in node_list: dfs(root, [])
+    if not all_paths and node_list:
+        for root in node_list: all_paths.append([root['net']])
     return all_paths
 
 
 def extract_pcp_traces(netlist_blocks: Dict) -> Dict[str, List[List[str]]]:
-    """
-    پیاده‌سازی واقعی الگوریتم 2 مقاله.
-    بلوک‌های درختی را به ردیابی‌های PCP خطی (جملات) تبدیل می‌کند.
-    """
     all_traces_map = {}
 
-    # ما از "___" به جای "_" برای جداسازی استفاده می‌کنیم تا از ابهام جلوگیری شود
-    def create_pcp_word(v_in_p: str, v_c: str, v_out_p: str) -> str:
-        return f"{v_in_p}___{v_c}___{v_out_p}"
+    def create_word(pin1, c_type, pin2):
+        return f"{get_normalized_pin(pin1)}___{c_type}___{get_normalized_pin(pin2)}"
 
     for center_gate, block in netlist_blocks.items():
+        input_paths = _find_paths(block['I'])
+        output_paths = _find_paths(block['O'])
+        center_type = block['center_type']
 
-        # 1. (FLATTEN) تمام مسیرهای ورودی و خروجی را پیدا کن
-        input_paths = _find_all_root_to_leaf_paths(block['I'])
-        output_paths = _find_all_root_to_leaf_paths(block['O'])
+        if not input_paths: input_paths = [[['DUMMY', 'IN', 'IN', center_gate, 1, 'dummy']]]
+        if not output_paths: output_paths = [[['DUMMY', 'OUT', 'OUT', center_gate, 1, 'dummy']]]
 
-        # اگر هیچ مسیر ورودی یا خروجی وجود نداشت، ردیابی وجود ندارد
-        if not input_paths or not output_paths:
-            all_traces_map[center_gate] = []
-            continue
+        traces = []
+        for pI in input_paths:
+            for pO in output_paths:
+                trace = []
+                # Input side
+                for i in range(len(pI) - 1, 0, -1):
+                    net_a, net_b = pI[i - 1], pI[i]
+                    # net_b[5] is cell_type
+                    trace.append(create_word(net_b[2], net_b[5], net_a[1]))
 
-        # 2. ترکیب هر مسیر ورودی با هر مسیر خروجی
-        generated_traces_for_gate = []
-        for path_I in input_paths:
-            for path_O in output_paths:
+                # Center
+                trace.append(create_word(pI[0][2], center_type, pO[0][2]))
 
-                pcp_trace_words = []
+                # Output side
+                for i in range(len(pO) - 1):
+                    net_a, net_b = pO[i], pO[i + 1]
+                    # net_a[5] is cell_type
+                    trace.append(create_word(net_a[2], net_a[5], net_b[1]))
 
-                # --- الف: ساخت PCP های مسیر ورودی ---
-                # (از لبه به سمت مرکز، Alg 2: lines 8-14)
-                # مسیرها از قبل مرتب هستند (از مرکز به لبه)، پس معکوس می‌کنیم
-                for i in range(len(path_I) - 1, 0, -1):
-                    net_a = path_I[i - 1]  # نت نزدیکتر به مرکز (عمق x-1)
-                    net_b = path_I[i]  # نت دورتر از مرکز (عمق x)
-
-                    # PCP بر اساس Eq (1) و Fig 4b: [vp_b, vc_b, vp'_a]
-                    # net_b[2] = vp_b (Current Input Pin)
-                    # net_b[3] = vc_b (Current Cell)
-                    # net_a[1] = vp'_a (Next Output Pin)
-                    word = create_pcp_word(net_b[2], net_b[3], net_a[1])
-                    pcp_trace_words.append(word)
-
-                # --- ب: ساخت PCP مرکزی ---
-                # (Alg 2: lines 15-18)
-                net_a = path_I[0]  # نت ورودیِ متصل به مرکز
-                net_b = path_O[0]  # نت خروجیِ متصل به مرکز
-
-                # PCP: [net_a.v_p, net_a.v_c, net_b.v_p]
-                # net_a[2] = vp_a (Current Input Pin)
-                # net_a[3] = vc_a (Current Cell - The Center Gate)
-                # net_b[2] = vp_b (Current Output Pin)
-                center_word = create_pcp_word(net_a[2], net_a[3], net_b[2])
-                pcp_trace_words.append(center_word)
-
-                # --- ج: ساخت PCP های مسیر خروجی ---
-                # (از مرکز به سمت لبه، Alg 2: lines 19-24)
-                for i in range(len(path_O) - 1):
-                    net_a = path_O[i]  # نت نزدیکتر به مرکز (عمق x-1)
-                    net_b = path_O[i + 1]  # نت دورتر از مرکز (عمق x)
-
-                    # PCP بر اساس Eq (1) و Fig 4b: [vp_a, vc_a, vp'_b]
-                    # net_a[2] = vp_a (Current Output Pin)
-                    # net_a[3] = vc_a (Current Cell)
-                    # net_b[1] = vp'_b (Next Input Pin)
-                    word = create_pcp_word(net_a[2], net_a[3], net_b[1])
-                    pcp_trace_words.append(word)
-
-                generated_traces_for_gate.append(pcp_trace_words)
-
-        all_traces_map[center_gate] = generated_traces_for_gate
-
+                traces.append(trace)
+        all_traces_map[center_gate] = traces
     return all_traces_map

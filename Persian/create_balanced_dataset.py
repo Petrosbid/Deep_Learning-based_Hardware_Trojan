@@ -11,7 +11,7 @@ from tqdm import tqdm  # برای نوار پیشرفت
 # --- تنظیمات ---
 
 # فایلی که توسط preprocess_nlp.py ساخته شد
-INPUT_FILE = "../jsonl_datasetdataset/labeled_traces_ALL.jsonl"
+INPUT_FILE = "../jsonl_dataset/labeled_traces_ALL.jsonl"
 # فایل خروجی نهایی برای فاز 3 (آموزش LSTM)
 OUTPUT_FILE = "../jsonl_dataset/labeled_traces_BALANCED.jsonl"
 
