@@ -4,12 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update detector.py">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" afterDir="false" />
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update model training">
       <change beforePath="$PROJECT_DIR$/Persian/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/detector.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Persian/netlist_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/netlist_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -198,7 +195,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763543027456</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="update model training">
+      <option name="closed" value="true" />
+      <created>1763563364838</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1763563364838</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -220,6 +225,7 @@
     <MESSAGE value="add English Code" />
     <MESSAGE value="update" />
     <MESSAGE value="update detector.py" />
-    <option name="LAST_COMMIT_MESSAGE" value="update detector.py" />
+    <MESSAGE value="update model training" />
+    <option name="LAST_COMMIT_MESSAGE" value="update model training" />
   </component>
 </project>

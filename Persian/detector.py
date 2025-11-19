@@ -132,10 +132,20 @@ class Gate:
     def _clean_type(self, raw_type):
         lower_type = raw_type.lower()
         clean = lower_type
+
+        # 1. حذف پسوندها
         for pattern in IGNORED_SUFFIXES:
             clean = re.sub(pattern, '', clean)
+
+        # 2. نگاشت دقیق (اولویت با نگاشت کامل است)
+        if clean in TYPE_MAPPING:
+            return TYPE_MAPPING[clean]
+
+        # 3. نگاشت شروع کلمه
         for key, val in TYPE_MAPPING.items():
-            if key in clean: return clean.replace(key, val)
+            if clean.startswith(key):
+                return val
+
         return clean
 
     def infer_pin_directions(self):

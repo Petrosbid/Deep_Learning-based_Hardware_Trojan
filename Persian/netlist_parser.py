@@ -1,12 +1,27 @@
+# netlist_parser.py
 import re
 from typing import List, Dict, Set, Optional
 
 # تنظیمات تمیزکاری نام گیت‌ها
 IGNORED_SUFFIXES = [r's\d+$', r'd\d+$', r'x\d+$', r'_[\d\w]+$', r'\d+$']
+
+# نگاشت دقیق و نهایی
 TYPE_MAPPING = {
-    'nnd': 'nand', 'inv': 'not', 'buf': 'buffer',
-    'dff': 'dff', 'sdff': 'dff', 'xnr': 'xnor',
-    'hi1': 'tiehi', 'lo1': 'tielo', 'assign': 'buffer'
+    'nnd': 'nand',
+    'inv': 'not',
+    'buf': 'buffer',
+    'dff': 'dff',
+    'sdff': 'dff',
+    'xnr': 'xnor',
+    'hi1': 'tiehi',
+    'lo1': 'tielo',
+    'assign': 'buffer',
+    'ib1': 'buffer',  # اضافه شد: بافر ورودی
+    'i1': 'buffer',  # اضافه شد: بافر معمولی
+    'and': 'and',  # برای جلوگیری از تغییرات ناخواسته
+    'or': 'or',
+    'nor': 'nor',
+    'xor': 'xor'
 }
 
 # تنظیمات تشخیص جهت پین‌ها
@@ -20,24 +35,33 @@ class Gate:
         self.instance_name = instance_name
         self.original_type = cell_type
         self.is_trojan = is_trojan
-        # تمیز کردن نام گیت
         self.cell_type = self._clean_type(cell_type)
-        self.connections = {}  # {port: wire}
+        self.connections = {}
         self.output_pins = []
         self.input_pins = []
 
     def _clean_type(self, raw_type):
         lower_type = raw_type.lower()
         clean = lower_type
+
+        # 1. حذف پسوندها
         for pattern in IGNORED_SUFFIXES:
             clean = re.sub(pattern, '', clean)
+
+        # 2. نگاشت دقیق (Exact Match اولویت دارد)
+        # اگر clean دقیقاً کلید باشد، مقدار را برگردان
+        if clean in TYPE_MAPPING:
+            return TYPE_MAPPING[clean]
+
+        # 3. نگاشت جزئی (Partial Match) با احتیاط
+        # فقط اگر کلمه با کلید شروع شود (نه اینکه وسطش باشد)
         for key, val in TYPE_MAPPING.items():
-            if key in clean:
-                return clean.replace(key, val)
+            if clean.startswith(key):
+                return val
+
         return clean
 
     def infer_pin_directions(self):
-        """تشخیص هوشمند جهت پین‌ها برای ساخت گراف"""
         temp_inputs = []
         temp_outputs = []
         unknowns = []
@@ -65,7 +89,7 @@ class Gate:
             if unknowns:
                 temp_outputs.append(unknowns[0])
                 temp_inputs.extend(unknowns[1:])
-            elif temp_inputs:  # Fallback
+            elif temp_inputs:
                 temp_outputs.append(temp_inputs.pop())
         else:
             temp_inputs.extend(unknowns)
@@ -80,13 +104,12 @@ class Gate:
 class Netlist:
     def __init__(self, module_name):
         self.module_name = module_name
-        self.inputs = set()
-        self.outputs = set()
-        self.wires = set()
-        self.gates = {}  # Map: instance_name -> Gate Obj
+        self.inputs = set();
+        self.outputs = set();
+        self.wires = set();
+        self.gates = {}
 
-    def add_gate(self, gate_obj):
-        self.gates[gate_obj.instance_name] = gate_obj
+    def add_gate(self, gate_obj): self.gates[gate_obj.instance_name] = gate_obj
 
 
 def parse_trojan_log(log_file_path: str) -> Set[str]:
@@ -98,7 +121,7 @@ def parse_trojan_log(log_file_path: str) -> Set[str]:
         body_match = re.search(r'TROJAN BODY:\s*(.*)', content, re.DOTALL)
         if not body_match: return trojan_gate_names
         body = body_match.group(1)
-        gate_regex = re.compile(r'^\s*[\w\d]+s\d+\s+([\w\d_]+)\s*\(')  # تطبیق با فرمت لاگ
+        gate_regex = re.compile(r'^\s*[\w\d]+s\d+\s+([\w\d_]+)\s*\(')
         for line in body.splitlines():
             match = gate_regex.search(line)
             if match: trojan_gate_names.add(match.group(1))
@@ -120,7 +143,6 @@ def parse_netlist(netlist_file_path: str, trojan_gate_names: Set[str]) -> Option
 
     try:
         with open(netlist_file_path, 'r', encoding='utf-8') as f:
-            # خواندن کل فایل و حذف کامنت‌ها برای پارس بهتر
             content = f.read()
             content = re.sub(r'//.*', '', content)
             statements = content.split(';')
@@ -154,9 +176,9 @@ def parse_netlist(netlist_file_path: str, trojan_gate_names: Set[str]) -> Option
                 match = re_assign.search(stmt + ';')
                 if match:
                     dest_wire, source_wire = match.groups()
-                    instance_name = f"assign_{assign_counter}"
+                    gate_obj = Gate(f"assign_{assign_counter}", 'buffer',
+                                    f"assign_{assign_counter}" in trojan_gate_names)
                     assign_counter += 1
-                    gate_obj = Gate(instance_name, 'buffer', instance_name in trojan_gate_names)
                     gate_obj.add_connection('Q', dest_wire)
                     gate_obj.add_connection('A', source_wire)
                     gate_obj.infer_pin_directions()
@@ -168,11 +190,9 @@ def parse_netlist(netlist_file_path: str, trojan_gate_names: Set[str]) -> Option
                     cell_type, instance_name, connections_str = match.groups()
                     instance_name = instance_name.replace('\\', '').strip()
                     is_trojan = instance_name in trojan_gate_names
-
                     gate_obj = Gate(instance_name, cell_type, is_trojan)
                     for port_match in re_port_conn.finditer(connections_str):
                         gate_obj.add_connection(port_match.group(1), port_match.group(2))
-
                     gate_obj.infer_pin_directions()
                     netlist_obj.add_gate(gate_obj)
                     continue
