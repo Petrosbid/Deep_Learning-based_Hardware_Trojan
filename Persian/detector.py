@@ -1,12 +1,10 @@
 #
 # detector.py
-# (ابزار نهایی تشخیص تروجان - ارتقا یافته با پارسر پویا)
+# (نسخه نهایی و تعاملی: تشخیص هوشمند + قابلیت تعریف دستی توسط کاربر)
 #
 import os
 import re
-import json
 import time
-import pickle
 import argparse
 import networkx as nx
 import torch
@@ -16,7 +14,7 @@ from gensim.models import KeyedVectors
 import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
-from typing import List, Dict, Set, Tuple, Optional, Any
+from typing import List, Dict, Optional, Any
 
 # --- تنظیمات ---
 DEFAULT_MODEL_FILE = "../Model/trojan_detector_final.pth"
@@ -27,70 +25,91 @@ EMBEDDING_DIM = 100
 BATCH_SIZE = 128
 NUM_WORKERS = 0
 
-CELL_LIBRARY = {
-    'inv_1': (['O'], ['I']),
-    'nand2_1': (['O'], ['I0', 'I1']),
-    'nand3_1': (['O'], ['I0', 'I1', 'I2']),
-    'nand4_1': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'nor2_1': (['O'], ['I0', 'I1']),
-    'nor3_1': (['O'], ['I0', 'I1', 'I2']),
-    'nor4_1': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'and2_0': (['O'], ['I0', 'I1']),
-    'and3_1': (['O'], ['I0', 'I1', 'I2']),
-    'xor2_1': (['O'], ['I0', 'I1']),
+# ==============================================================================
+# 🔧 مخزن تعاریف (اینجا با ورودی کاربر آپدیت می‌شود)
+# ==============================================================================
+# فرمت: 'gate_name': (['OUTPUTS'], ['INPUTS'])
+CUSTOM_GATE_DEFINITIONS = {}
 
-    'mux2i_1': (['O'], ['I0', 'I1', 'S']),  # 2-input MUX
-    'a21oi_1': (['O'], ['A1', 'A2', 'B1']),  # (A1&A2) | B1 -> Inverted
-    'a22oi_1': (['O'], ['A1', 'A2', 'B1', 'B2']),  # (A1&A2) | (B1&B2) -> Inverted
-    'a221oi_1': (['O'], ['A1', 'A2', 'B1', 'B2', 'C1']),  # (A1&A2) | (B1&B2) | C1 -> Inverted
-    'a222oi_1': (['O'], ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),  # ...
-    'o21ai_0': (['O'], ['A1', 'A2', 'B1']),  # (A1|A2) & B1 -> Inverted
-    'o32ai_1': (['O'], ['A1', 'A2', 'A3', 'B1', 'B2']),  # (A1|A2|A3) & (B1|B2) -> Inverted
-    'o22ai_1': (['O'], ['A1', 'A2', 'B1', 'B2']),  # (A1|A2) & (B1|B2) -> Inverted
-    'o221ai_1': (['O'], ['A1', 'A2', 'B1', 'B2', 'C1']),  # (A1|A2) & (B1|B2) & C1 -> Inverted
-    # --------------------------------------------------
+# لیست سفید خروجی‌ها (استاندارد جهانی)
+KNOWN_OUTPUTS = {
+    'Y', 'Q', 'QN', 'Q_N', 'Z', 'ZN', 'O', 'OUT', 'SO', 'CO', 'S', 'SUM', 'RESULT', 'R',
+    'Q_REG', 'EQ', 'LT', 'GT'
+}
 
-    # --- (قبلی) سلول‌های عمومی ISCAS ---
-    'dff': (['Q'], ['D', 'CLK']),
-    'not': (['O'], ['I']),
-    'and': (['O'], ['I0', 'I1']),
-    'or': (['O'], ['I0', 'I1']),
-    'nand': (['O'], ['I0', 'I1']),
-    'nor': (['O'], ['I0', 'I1']),
-    'and3': (['O'], ['I0', 'I1', 'I2']),
-    'and4': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'or3': (['O'], ['I0', 'I1', 'I2']),
-    'or4': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'nand3': (['O'], ['I0', 'I1', 'I2']),
-    'nand4': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'nor3': (['O'], ['I0', 'I1', 'I2']),
-    'nor4': (['O'], ['I0', 'I1', 'I2', 'I3']),
-    'dff_': (['Q', 'QN'], ['D', 'CLK', 'PRE', 'CLR']),
-    'nand2': (['O'], ['I0', 'I1']),
-    'inv': (['O'], ['I']),
-    'and2': (['O'], ['I0', 'I1']),
-    'nor2': (['O'], ['I0', 'I1']),
-    'xor2': (['O'], ['I0', 'I1']),
-    'buf': (['O'], ['I']),
+# لیست پیشوندهای ورودی
+KNOWN_INPUTS_PREFIXES = (
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+    'I', 'IN', 'SEL', 'CLK', 'CK', 'RST', 'RESET', 'EN', 'TE', 'TI', 'ADDR', 'DATA',
+    'SIN', 'SCAN'
+)
 
-    # --- سلول‌های کتابخانه TRIT (داده‌های آموزشی) ---
-    'nor2s1': (['Q'], ['DIN1', 'DIN2']),
-    'hi1s1': (['Q'], ['DIN']),
-    'nnd2s1': (['Q'], ['DIN1', 'DIN2']),
-    'nor3s1': (['Q'], ['DIN1', 'DIN2', 'DIN3']),
-    'nnd4s1': (['Q'], ['DIN1', 'DIN2', 'DIN3', 'DIN4']),
-    'i1s1': (['Q'], ['DIN']),
-    'or5s1': (['Q'], ['DIN1', 'DIN2', 'DIN3', 'DIN4', 'DIN5']),
-    'xor2s1': (['Q'], ['DIN1', 'DIN2']),
-    'dffs1': (['Q', 'QN'], ['DIN', 'CLK', 'EB']),
-    'mux2s1': (['Q'], ['I0', 'I1', 'S']),
-    'dffle': (['Q', 'QN'], ['DIN', 'CLK', 'EB']),
-    'assign': (['Q'], ['DIN']),
+IGNORED_SUFFIXES = [r's\d+', r'd\d+', r'x\d+', r'_[\d\w]+', r'\d+']
+TYPE_MAPPING = {
+    'nnd': 'nand', 'inv': 'not', 'buf': 'buffer',
+    'dff': 'dff', 'sdff': 'dff', 'xnr': 'xnor'
 }
 
 
 # ##################################################################
-# ########## کپی شده از model.py (بدون تغییر) #####################
+# ########## رابط کاربری تعاملی (جدید) ############################
+# ##################################################################
+def run_interactive_setup():
+    """
+    این تابع قبل از شروع پردازش اجرا می‌شود و اطلاعات خاص کاربر را می‌گیرد.
+    """
+    print("\n" + "=" * 60)
+    print(" 🛠️  بخش تنظیمات دستی پارسر (Manual Configuration)  🛠️")
+    print("=" * 60)
+    print("توضیح: این برنامه به صورت پیش‌فرض پین‌های استاندارد (مثل Q, Y, OUT) را خروجی")
+    print("و پین‌های (A, B, I, D) را ورودی در نظر می‌گیرد.")
+    print("\n⚠️  سوال: آیا در فایل شما گیتی وجود دارد که نام‌گذاری پین‌هایش برعکس یا عجیب باشد؟")
+    print("    (مثلاً گیتی که پین 'A' خروجی باشد و 'Q' ورودی؟)")
+
+    while True:
+        choice = input("\n>> آیا نیاز به تعریف دستی دارید؟ (y/n): ").strip().lower()
+        if choice in ['y', 'n', 'yes', 'no']:
+            break
+        print("خطا: لطفاً فقط 'y' یا 'n' وارد کنید.")
+
+    if choice in ['n', 'no']:
+        print("✅ بسیار عالی. از تنظیمات هوشمند پیش‌فرض استفاده می‌شود.")
+        return
+
+    print("\n--- 📝 ورود اطلاعات گیت‌های خاص ---")
+    print("نکته: نام گیت را دقیقاً همانطور که در فایل Verilog است وارد کنید (مثلاً 'nor2s3').")
+
+    while True:
+        print("-" * 30)
+        gate_name = input("1. نام نوع گیت (Gate Type): ").strip()
+        if not gate_name:
+            print("نام گیت نمی‌تواند خالی باشد.")
+            continue
+
+        out_str = input(f"2. لیست پین‌های خروجی '{gate_name}' (با کاما , جدا کنید): ").strip()
+        outs = [x.strip() for x in out_str.split(',') if x.strip()]
+
+        in_str = input(f"3. لیست پین‌های ورودی '{gate_name}' (با کاما , جدا کنید): ").strip()
+        ins = [x.strip() for x in in_str.split(',') if x.strip()]
+
+        if not outs:
+            print("❌ خطا: هر گیت باید حداقل یک خروجی داشته باشد.")
+            continue
+
+        # ذخیره در دیکشنری گلوبال
+        CUSTOM_GATE_DEFINITIONS[gate_name] = (outs, ins)
+        print(f"✅ ثبت شد: [{gate_name}] -> Outputs:{outs} | Inputs:{ins}")
+
+        more = input("\n>> آیا گیت دیگری برای اضافه کردن دارید؟ (y/n): ").strip().lower()
+        if more not in ['y', 'yes']:
+            break
+
+    print("\n✅ تنظیمات دستی پایان یافت. شروع پردازش...")
+    print("=" * 60 + "\n")
+
+
+# ##################################################################
+# ########## مدل LSTM ##############################################
 # ##################################################################
 class TrojanLSTM(nn.Module):
     def __init__(self, input_size=100, hidden_size=128, num_layers=2, output_size=2):
@@ -111,39 +130,111 @@ class TrojanLSTM(nn.Module):
 
 
 # ##################################################################
-# ########## کپی شده از netlist_parser.py (ارتقا یافته) #############
+# ########## کلاس گیت و منطق تشخیص جهت ############################
 # ##################################################################
 class Gate:
     def __init__(self, instance_name, cell_type):
         self.instance_name = instance_name
-        self.cell_type = cell_type
+        self.original_type = cell_type
+        self.base_type = self._clean_type(cell_type)
         self.connections = {}
+        self.output_pins = []
+        self.input_pins = []
 
-    def add_connection(self, port, wire): self.connections[port] = wire
+    def _clean_type(self, raw_type):
+        lower_type = raw_type.lower()
+        clean = lower_type
+        for pattern in IGNORED_SUFFIXES:
+            clean = re.sub(pattern, '', clean)
+        for key, val in TYPE_MAPPING.items():
+            if key in clean:
+                return clean.replace(key, val)
+        return clean
+
+    def infer_pin_directions(self):
+        # 1. اولویت اول: تنظیمات دستی کاربر
+        # ما نوع اصلی (original_type) را چک می‌کنیم که کاربر وارد کرده است
+        if self.original_type in CUSTOM_GATE_DEFINITIONS:
+            defined_outs, defined_ins = CUSTOM_GATE_DEFINITIONS[self.original_type]
+            for port in self.connections:
+                # چک کردن دقیق نام پورت
+                if port in defined_outs:
+                    self.output_pins.append(port)
+                elif port in defined_ins:
+                    self.input_pins.append(port)
+                else:
+                    # اگر پورتی در کد بود که کاربر تعریف نکرده، طبق منطق هوشمند پیش برو
+                    self._heuristic_inference(port)
+            return
+
+        # اگر در تنظیمات دستی نبود، کل پورت‌ها را بده به تشخیص هوشمند
+        for port in self.connections:
+            self._heuristic_inference(port)
+
+        # بررسی نهایی برای گیت‌های بدون خروجی مشخص شده
+        if not self.output_pins and self.input_pins:
+            # اگر همه ورودی شدند و خروجی نداریم، این اشتباه است.
+            # آخرین ورودی را برمی‌داریم و خروجی می‌کنیم (حدس آخر)
+            popped = self.input_pins.pop()
+            self.output_pins.append(popped)
+
+    def _heuristic_inference(self, port):
+        """منطق تشخیص هوشمند برای یک پورت"""
+        port_upper = port.upper()
+
+        # 2. خروجی‌های استاندارد
+        if port_upper in KNOWN_OUTPUTS:
+            self.output_pins.append(port)
+            return
+
+        # 3. ورودی‌های استاندارد
+        is_input = False
+        for prefix in KNOWN_INPUTS_PREFIXES:
+            if port_upper.startswith(prefix):
+                if prefix == 'S' and ('SUM' in port_upper):
+                    pass  # S اگر SUM باشد ورودی نیست
+                else:
+                    self.input_pins.append(port)
+                    is_input = True
+                    break
+
+        if is_input: return
+
+        # 4. اگر ناشناخته بود
+        # اگر هنوز خروجی نداریم، این را خروجی بگیر. اگر داریم، ورودی بگیر.
+        if not self.output_pins:
+            self.output_pins.append(port)
+        else:
+            self.input_pins.append(port)
 
 
 class Netlist:
     def __init__(self, module_name):
-        self.module_name = module_name;
+        self.module_name = module_name
         self.inputs = set();
-        self.outputs = set()
+        self.outputs = set();
         self.wires = set();
         self.gates = {}
 
-    def add_gate(self, gate_obj): self.gates[gate_obj.instance_name] = gate_obj
+    def add_gate(self, gate_obj):
+        self.gates[gate_obj.instance_name] = gate_obj
 
 
-def parse_netlist(netlist_file_path: str) -> Optional[Netlist]:
-    trojan_gate_names = set()
+# ##################################################################
+# ########## پارس کردن فایل ########################################
+# ##################################################################
+def parse_netlist_dynamic(netlist_file_path: str) -> Optional[Netlist]:
     re_module = re.compile(r'^\s*module\s+([\w\d_]+)', re.IGNORECASE)
     re_port = re.compile(r'^\s*(input|output)\s+(.+);', re.IGNORECASE)
     re_wire = re.compile(r'^\s*wire\s+(.+);', re.IGNORECASE)
     re_assign = re.compile(r'^\s*assign\s+([\w\d_\[\]:]+)\s*=\s*([\w\d_\[\]:\'b]+);', re.IGNORECASE)
-    re_gate = re.compile(r'^\s*([\w\d_]+)\s+([\w\d_:]+)\s*\((.*?)\);', re.DOTALL)
-    re_port_conn = re.compile(r'\.([\w\d_]+)\s*\(([\w\d_\[\]:\'b]+)\)')
-    netlist_obj = None;
-    buffer = "";
+    re_gate = re.compile(r'^\s*([\w\d_]+)\s+([\w\d_:\\]+)\s*\((.*?)\);', re.DOTALL)
+    re_port_conn = re.compile(r'\.([\w\d_]+)\s*\(([\w\d_\[\]:\'b]*)\)')
+
+    netlist_obj = None
+    buffer = ""
     assign_counter = 0
+
     try:
         with open(netlist_file_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -151,12 +242,15 @@ def parse_netlist(netlist_file_path: str) -> Optional[Netlist]:
                 if not line or line.startswith('//'): continue
                 buffer += " " + line
                 if not buffer.endswith(';'): continue
-                complete_line = buffer.strip();
+
+                complete_line = buffer.strip()
                 buffer = ""
+
                 if netlist_obj is None:
                     match = re_module.search(complete_line)
                     if match: netlist_obj = Netlist(module_name=match.group(1))
                     continue
+
                 match = re_port.search(complete_line)
                 if match:
                     port_type, ports_str = match.groups()
@@ -166,76 +260,49 @@ def parse_netlist(netlist_file_path: str) -> Optional[Netlist]:
                     else:
                         netlist_obj.outputs.update(ports)
                     continue
-                match = re_wire.search(complete_line)
-                if match:
-                    wires_str = match.group(1)
-                    wires = [w.strip() for w in wires_str.split(',') if w.strip()]
-                    netlist_obj.wires.update(wires)
-                    continue
+
                 match = re_assign.search(complete_line)
                 if match:
                     dest_wire, source_wire = match.groups()
-                    instance_name = f"assign_{assign_counter}";
+                    gate_obj = Gate(f"assign_{assign_counter}", 'buffer')
                     assign_counter += 1
-                    gate_obj = Gate(instance_name, 'assign')
-                    gate_obj.add_connection('Q', dest_wire);
-                    gate_obj.add_connection('DIN', source_wire)
+                    gate_obj.connections['Q'] = dest_wire
+                    gate_obj.connections['A'] = source_wire
+                    gate_obj.infer_pin_directions()
                     netlist_obj.add_gate(gate_obj)
                     continue
 
-                # --- ✨✨✨ شروع منطق پارسر پویا ✨✨✨ ---
                 match = re_gate.search(complete_line)
                 if match:
                     cell_type, instance_name, connections_str = match.groups()
-
-                    instance_name = instance_name.replace(':', '').strip()
-                    if instance_name.upper().startswith('G'):
-                        instance_name = instance_name[1:]
-
+                    instance_name = instance_name.replace('\\', '').strip()
                     gate_obj = Gate(instance_name, cell_type)
 
-                    # بررسی نوع نگاشت: صریح (.port) یا ضمنی (wire1, wire2)
-                    if connections_str.strip().startswith('.'):
-                        # --- 1. حالت صریح (مانند داده‌های آموزشی) ---
-                        for port_match in re_port_conn.finditer(connections_str):
-                            gate_obj.add_connection(port_match.group(1), port_match.group(2))
-                    else:
-                        wires = [w.strip() for w in connections_str.split(',') if w.strip()]
+                    for port_match in re_port_conn.finditer(connections_str):
+                        port_name = port_match.group(1)
+                        wire_name = port_match.group(2)
+                        if wire_name: gate_obj.connections[port_name] = wire_name
 
-                        if not wires: continue
-                        output_pin_name = "O"
-                        gate_obj.add_connection(output_pin_name, wires[0])
-
-                        input_pins = []
-                        for i, input_wire in enumerate(wires[1:]):
-                            input_pin_name = f"I{i}"
-                            gate_obj.add_connection(input_pin_name, input_wire)
-                            input_pins.append(input_pin_name)
-
-                        if cell_type not in CELL_LIBRARY:
-                            CELL_LIBRARY[cell_type] = ([output_pin_name], input_pins)
-
+                    gate_obj.infer_pin_directions()
                     netlist_obj.add_gate(gate_obj)
                     continue
+
         if netlist_obj and len(netlist_obj.gates) > 0:
             return netlist_obj
         else:
             return None
     except Exception as e:
-        print(f"\n[Error] Failed to parse {netlist_file_path}: {e}");
+        print(f"\n[Error] Failed to parse: {e}")
         return None
 
 
 # ##################################################################
-# ########## کپی شده از phase1_graph_utils.py (ارتقا یافته) #############
+# ########## سایر توابع (تبدیل به گراف و ...) #######################
 # ##################################################################
 def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
-    """
-    (ارتقا یافته)
-    از CELL_LIBRARY (که اکنون پویا است) برای تعیین جهت پین استفاده می‌کند.
-    """
-    G = nx.DiGraph();
+    G = nx.DiGraph()
     wire_to_pins_map = {}
+
     for port in netlist.inputs:
         G.add_node(port, type='Port_Input')
         wire_to_pins_map[port] = {'source_pin': port, 'sinks': []}
@@ -245,41 +312,33 @@ def convert_to_pin_graph(netlist: Netlist) -> nx.DiGraph:
         wire_to_pins_map[port]['sinks'].append(port)
 
     for gate_name, gate_obj in netlist.gates.items():
-        cell_type = gate_obj.cell_type
-        G.add_node(gate_name, type='Cell', cell_type=cell_type, is_trojan=False)
-
-        output_pins, input_pins = CELL_LIBRARY.get(cell_type, ([], []))
-
-        if not output_pins and not input_pins:
-            print(f"  ⚠️ هشدار: گیت '{gate_name}' ({cell_type}) در کتابخانه تعریف نشده. نادیده گرفته شد.")
-            continue
-
-        for port, wire in gate_obj.connections.items():
+        G.add_node(gate_name, type='Cell', cell_type=gate_obj.base_type, is_trojan=False)
+        for port in gate_obj.output_pins:
+            wire = gate_obj.connections[port]
             pin_name = f"{gate_name}___{port}"
-
-            if port in output_pins:
-                G.add_node(pin_name, type='Pin_Output');
-                G.add_edge(gate_name, pin_name)
-                if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
-                wire_to_pins_map[wire]['source_pin'] = pin_name
-            elif port in input_pins:
-                G.add_node(pin_name, type='Pin_Input');
-                G.add_edge(pin_name, gate_name)
-                if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
-                wire_to_pins_map[wire]['sinks'].append(pin_name)
+            G.add_node(pin_name, type='Pin_Output')
+            G.add_edge(gate_name, pin_name)
+            if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
+            wire_to_pins_map[wire]['source_pin'] = pin_name
+        for port in gate_obj.input_pins:
+            wire = gate_obj.connections[port]
+            pin_name = f"{gate_name}___{port}"
+            G.add_node(pin_name, type='Pin_Input')
+            G.add_edge(pin_name, gate_name)
+            if wire not in wire_to_pins_map: wire_to_pins_map[wire] = {'source_pin': None, 'sinks': []}
+            wire_to_pins_map[wire]['sinks'].append(pin_name)
 
     for wire, pins in wire_to_pins_map.items():
         source_pin = pins['source_pin']
         if source_pin:
             for sink_pin in pins['sinks']:
-                if G.has_node(source_pin) and G.has_node(sink_pin):
-                    G.add_edge(source_pin, sink_pin)
+                if G.has_node(source_pin) and G.has_node(sink_pin): G.add_edge(source_pin, sink_pin)
     return G
 
 
 def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth: int, Direction: str) -> List[Dict]:
     if remaining_depth <= 0: return []
-    current_logic_level = (max_depth - remaining_depth) + 1;
+    current_logic_level = (max_depth - remaining_depth) + 1
     found_nets = []
     if Direction == 'I':
         try:
@@ -317,13 +376,12 @@ def _recursion(G: nx.DiGraph, current_cell: str, remaining_depth: int, max_depth
 def generate_netlist_blocks(pin_graph: nx.DiGraph, logic_level: int = 4) -> Dict:
     all_blocks = {}
     cell_nodes = [n for n, d in pin_graph.nodes(data=True) if d.get('type') == 'Cell']
-    for vc in tqdm(cell_nodes, desc="  (2/3) 🧱 Generating Blocks (Alg 1)", unit="gate"):
+    for vc in tqdm(cell_nodes, desc="  (2/3) 🧱 Generating Blocks", unit="gate"):
         block_tree = {
             'I': _recursion(pin_graph, vc, logic_level, logic_level, 'I'),
             'O': _recursion(pin_graph, vc, logic_level, logic_level, 'O')
         }
-        all_blocks[vc] = all_blocks.get(vc, {})
-        all_blocks[vc].update(block_tree)
+        all_blocks[vc] = block_tree
     return all_blocks
 
 
@@ -340,39 +398,24 @@ def _find_all_root_to_leaf_paths(node_list: List[Dict]) -> List[List[List[Any]]]
 
     for root_node in node_list: dfs(root_node, [])
     if not all_paths and node_list:
-        for root_node in node_list:
-            all_paths.append([root_node['net']])
+        for root_node in node_list: all_paths.append([root_node['net']])
     return all_paths
 
 
 def extract_pcp_traces(netlist_blocks: Dict) -> Dict[str, List[List[str]]]:
     all_traces_map = {}
+    global netlist_obj_global
 
-    def create_pcp_word(v_in_p: str, v_c: str, v_out_p: str) -> str:
+    def create_pcp_word(v_in_p: str, v_c_type: str, v_out_p: str) -> str:
         v_in_p_short = v_in_p.split('___')[-1]
         v_out_p_short = v_out_p.split('___')[-1]
-
-        v_c_type = "Unknown"
-        if netlist_obj and v_c in netlist_obj.gates:
-            v_c_type = netlist_obj.gates[v_c].cell_type
-
-        if 'and' in v_c_type: v_c_type = 'and_base'
-        if 'or' in v_c_type: v_c_type = 'or_base'
-        if 'nand' in v_c_type: v_c_type = 'nand_base'
-        if 'nor' in v_c_type: v_c_type = 'nor_base'
-        if 'xor' in v_c_type: v_c_type = 'xor_base'
-        if 'inv' in v_c_type or 'not' in v_c_type: v_c_type = 'inv_base'
-
         return f"{v_in_p_short}___{v_c_type}___{v_out_p_short}"
 
-    global netlist_obj
-
-    for center_gate, block in tqdm(netlist_blocks.items(), desc="  (3/3) 💬 Extracting Traces (Alg 2)", unit="gate"):
+    for center_gate, block in tqdm(netlist_blocks.items(), desc="  (3/3) 💬 Extracting Traces", unit="gate"):
         input_paths = _find_all_root_to_leaf_paths(block.get('I', []))
         output_paths = _find_all_root_to_leaf_paths(block.get('O', []))
-
-        if not input_paths: input_paths = [[['DUMMY_CELL_I', 'DUMMY_PIN_I', 'DUMMY_PIN_I', center_gate, 1]]]
-        if not output_paths: output_paths = [[['DUMMY_CELL_O', 'DUMMY_PIN_O', 'DUMMY_PIN_O', center_gate, 1]]]
+        if not input_paths: input_paths = [[['DUMMY', 'IN', 'IN', center_gate, 1]]]
+        if not output_paths: output_paths = [[['DUMMY', 'OUT', 'OUT', center_gate, 1]]]
 
         generated_traces_for_gate = []
         for path_I in input_paths:
@@ -380,31 +423,35 @@ def extract_pcp_traces(netlist_blocks: Dict) -> Dict[str, List[List[str]]]:
                 pcp_trace_words = []
                 for i in range(len(path_I) - 1, 0, -1):
                     net_a, net_b = path_I[i - 1], path_I[i]
-                    word = create_pcp_word(net_b[2], net_b[3], net_a[1])
-                    pcp_trace_words.append(word)
-                net_a, net_b = path_I[0], path_O[0]
-                center_word = create_pcp_word(net_a[2], net_a[3], net_b[2])
-                pcp_trace_words.append(center_word)
+                    cell_type = "unknown"
+                    if netlist_obj_global and net_b[3] in netlist_obj_global.gates:
+                        cell_type = netlist_obj_global.gates[net_b[3]].base_type
+                    pcp_trace_words.append(create_pcp_word(net_b[2], cell_type, net_a[1]))
+
+                net_a_in = path_I[0];
+                net_b_out = path_O[0]
+                center_type = "unknown"
+                if netlist_obj_global and center_gate in netlist_obj_global.gates:
+                    center_type = netlist_obj_global.gates[center_gate].base_type
+                pcp_trace_words.append(create_pcp_word(net_a_in[2], center_type, net_b_out[2]))
+
                 for i in range(len(path_O) - 1):
                     net_a, net_b = path_O[i], path_O[i + 1]
-                    word = create_pcp_word(net_a[2], net_a[3], net_b[1])
-                    pcp_trace_words.append(word)
+                    cell_type = "unknown"
+                    if netlist_obj_global and net_a[3] in netlist_obj_global.gates:
+                        cell_type = netlist_obj_global.gates[net_a[3]].base_type
+                    pcp_trace_words.append(create_pcp_word(net_a[2], cell_type, net_b[1]))
                 generated_traces_for_gate.append(pcp_trace_words)
         all_traces_map[center_gate] = generated_traces_for_gate
     return all_traces_map
 
 
-# ##################################################################
-# ########## کلاس Dataset (بدون تغییر) #############################
-# ##################################################################
 class InferenceDataset(Dataset):
     def __init__(self, traces_dict: Dict[str, List[List[str]]], embeddings: KeyedVectors):
         self.embeddings = embeddings
-        self.zero_vector = np.zeros(EMBEDDING_DIM).astype(np.float32)
         self.all_traces_list = []
         for gate, traces in traces_dict.items():
-            for trace in traces:
-                self.all_traces_list.append({'gate': gate, 'trace': trace})
+            for trace in traces: self.all_traces_list.append({'gate': gate, 'trace': trace})
 
     def __len__(self):
         return len(self.all_traces_list)
@@ -416,98 +463,90 @@ class InferenceDataset(Dataset):
         trace_tensor_data = np.zeros((MAX_TRACE_LENGTH, EMBEDDING_DIM), dtype=np.float32)
         for i, word in enumerate(trace_words):
             if i >= MAX_TRACE_LENGTH: break
-            if word in self.embeddings:
-                trace_tensor_data[i] = self.embeddings[word]
+            if word in self.embeddings: trace_tensor_data[i] = self.embeddings[word]
         return {"trace_tensor": torch.tensor(trace_tensor_data, dtype=torch.float32), "gate": gate}
 
 
 # ##################################################################
-# ########## تابع اصلی اجرای خط لوله (بدون تغییر) ###################
+# ########## Main ##################################################
 # ##################################################################
-netlist_obj: Optional[Netlist] = None
+netlist_obj_global: Optional[Netlist] = None
 
 
 def main():
-    global netlist_obj
-    parser = argparse.ArgumentParser(description="ابزار تشخیص تروجان سخت‌افزاری مبتنی بر LSTM")
-    parser.add_argument("verilog_file", help="مسیر فایل نت‌لیست .v برای اسکن")
-    parser.add_argument("--model", default=DEFAULT_MODEL_FILE, help="مسیر فایل مدل .pth آموزش‌دیده")
-    parser.add_argument("--vectors", default=DEFAULT_VECTORS_FILE, help="مسیر فایل net2vec.vectors")
+    global netlist_obj_global
+    parser = argparse.ArgumentParser(description="Hardware Trojan Detector (Interactive)")
+    parser.add_argument("verilog_file", help="Path to .v netlist")
+    parser.add_argument("--model", default=DEFAULT_MODEL_FILE, help="Path to .pth model")
+    parser.add_argument("--vectors", default=DEFAULT_VECTORS_FILE, help="Path to .vectors")
     args = parser.parse_args()
+
     if not (os.path.exists(args.verilog_file) and os.path.exists(args.model) and os.path.exists(args.vectors)):
-        print("❌ خطا: یکی از فایل‌های ورودی (verilog, model, or vectors) یافت نشد.")
+        print("❌ خطا: یکی از فایل‌های ورودی (netlist, model, vectors) یافت نشد.")
         return
+
+    # 1. اجرای تنظیمات تعاملی (Ask User)
+    run_interactive_setup()
+
     start_time = time.time()
-    print(f"--- 🔬 فاز 1: در حال پردازش {os.path.basename(args.verilog_file)} ---")
+    print(f"--- 🔬 فاز 1: پردازش {os.path.basename(args.verilog_file)} ---")
+
     print("  (1/3) 📄 Parsing Netlist...")
-    netlist_obj = parse_netlist(args.verilog_file)
-    if netlist_obj is None:
-        print("❌ پردازش متوقف شد: پارس کردن نت‌لیست ناموفق بود.")
-        return
-    pin_graph = convert_to_pin_graph(netlist_obj)
+    netlist_obj_global = parse_netlist_dynamic(args.verilog_file)
+    if netlist_obj_global is None: return
+    print(f"    ✅ {len(netlist_obj_global.gates)} گیت شناسایی شد.")
+
+    pin_graph = convert_to_pin_graph(netlist_obj_global)
+    print(f"    ✅ گراف ساخته شد (گره‌ها: {pin_graph.number_of_nodes()})")
+
     net_blocks = generate_netlist_blocks(pin_graph, LOGIC_LEVEL)
     all_traces_dict = extract_pcp_traces(net_blocks)
+
     total_traces = sum(len(t) for t in all_traces_dict.values())
     if total_traces == 0:
-        print(f"  (تعداد گیت‌های پارس شده: {len(netlist_obj.gates)})")
-        print(f"  (تعداد گره‌های گراف: {pin_graph.number_of_nodes()})")
-        print(f"  (تعداد یال‌های گراف: {pin_graph.number_of_edges()})")
-        print(f"  (تعداد بلوک‌های ساخته شده: {len(net_blocks)})")
-        print("❌ پردازش متوقف شد: هیچ ردیابی (trace) معتبری استخراج نشد.")
+        print("❌ هیچ ردیابی استخراج نشد.")
         return
-    print(f"✅ فاز 1 کامل شد. {total_traces:,} ردیابی از {len(netlist_obj.gates):,} گیت استخراج شد.")
-    print("\n--- 🧠 فاز 3: در حال بارگذاری مدل‌ها ---")
+    print(f"✅ {total_traces:,} ردیابی استخراج شد.")
+
+    print("\n--- 🧠 فاز 2: استنتاج هوش مصنوعی ---")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"  (استفاده از دستگاه: {device})")
     try:
         embeddings = KeyedVectors.load_word2vec_format(args.vectors)
-        print("  ✅ دیکشنری Net2Vec (vectors) بارگذاری شد.")
         model = TrojanLSTM().to(device)
-        model.load_state_dict(torch.load(args.model))
+        model.load_state_dict(torch.load(args.model, map_location=device))
         model.eval()
-        print(f"  ✅ مدل آشکارساز ({args.model}) بارگذاری شد.")
     except Exception as e:
-        print(f"❌ خطا در بارگذاری مدل‌ها: {e}")
+        print(f"❌ خطا در لود مدل: {e}")
         return
-    print("\n--- 🤖 فاز 4: در حال اجرای استنتاج و رأی‌گیری ---")
+
     inference_dataset = InferenceDataset(all_traces_dict, embeddings)
     inference_loader = DataLoader(inference_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS)
-    gate_votes = defaultdict(lambda: {'ht_votes': 0, 'normal_votes': 0})
+
+    gate_votes = defaultdict(lambda: {'ht': 0, 'norm': 0})
     with torch.no_grad():
-        for batch in tqdm(inference_loader, desc="  (1/2) 🧠 در حال استنتاج (Inference)"):
+        for batch in tqdm(inference_loader, desc="  🧠 Inference"):
             traces = batch['trace_tensor'].to(device)
             gates = batch['gate']
             outputs = model(traces)
             _, preds = torch.max(outputs, 1)
-            preds_cpu = preds.cpu().numpy()
-            for i in range(len(gates)):
-                gate_name = gates[i]
-                if preds_cpu[i] == 1:
-                    gate_votes[gate_name]['ht_votes'] += 1
+            preds = preds.cpu().numpy()
+            for i, gate in enumerate(gates):
+                if preds[i] == 1:
+                    gate_votes[gate]['ht'] += 1
                 else:
-                    gate_votes[gate_name]['normal_votes'] += 1
-    suspicious_gates = []
-    for gate_name, data in tqdm(gate_votes.items(), desc="  (2/2) 🗳️ در حال رأی‌گیری (Voter)"):
-        if data['ht_votes'] > data['normal_votes']:
-            suspicious_gates.append(gate_name)
-        elif data['ht_votes'] == data['normal_votes'] and data['ht_votes'] > 0:
-            suspicious_gates.append(gate_name)
-    print("\n" + "=" * 50)
-    print("🏁 اسکن کامل شد")
-    print("=" * 50)
-    if not suspicious_gates:
-        print("  ✅ نتیجه: هیچ تروجان سخت‌افزاری در این فایل پیدا نشد.")
+                    gate_votes[gate]['norm'] += 1
+
+    suspicious_gates = [g for g, v in gate_votes.items() if v['ht'] > v['norm']]
+    print("\n--- 📊 نتایج نهایی ---")
+    if suspicious_gates:
+        print(f"🚨 تروجان شناسایی شد! ({len(suspicious_gates)} گیت مشکوک)")
+        print("نمونه گیت‌های آلوده:", suspicious_gates[:5])
+        with open("suspicious_gates.txt", "w") as f:
+            f.write("\n".join(suspicious_gates))
+        print("📄 لیست کامل در suspicious_gates.txt ذخیره شد.")
     else:
-        print(f"  🚨 هشدار: {len(suspicious_gates)} گیت مشکوک به تروجان پیدا شد!")
-        print("-" * 50)
-        print("  لیست گیت‌های مشکوک:")
-        for i, gate in enumerate(suspicious_gates):
-            print(f"    {i + 1}. {gate}")
-            if i > 20:
-                print(f"    ... و {len(suspicious_gates) - i - 1} گیت دیگر.")
-                break
-    total_time = time.time() - start_time
-    print(f"\n⏱️ زمان کل اسکن: {total_time:.2f} ثانیه")
+        print("✅ مدار پاک است.")
+    print(f"\n⏱️ زمان کل: {time.time() - start_time:.2f} ثانیه")
 
 
 if __name__ == "__main__":

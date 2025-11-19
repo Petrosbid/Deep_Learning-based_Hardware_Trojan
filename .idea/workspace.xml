@@ -6,18 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/create_balanced_dataset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/dataset.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Persian/detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/evaluate.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/evaluate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/netlist_parser.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/netlist_parser.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/phase1_graph_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/preprocess_nlp.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/preprocess_nlp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/process_originals.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/process_originals.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/run_batch_extraction.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/run_batch_extraction.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/train_detector_updated.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/train_detector_updated.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Persian/train_nlp.py" beforeDir="false" afterPath="$PROJECT_DIR$/Persian/train_nlp.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -190,7 +179,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763153816924</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="update">
+      <option name="closed" value="true" />
+      <created>1763241655863</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1763241655863</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
