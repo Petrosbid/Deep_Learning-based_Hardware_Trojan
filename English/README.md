@@ -122,7 +122,7 @@ python English/create_balanced_dataset.py
 # === Phase 3: Train the Detector ===
 # (This uses your GPU to train the LSTM)
 echo "--- Running Phase 3 ---"
-python English/train_detector_updated.py
+python English/train_detector.py
 
 # === Phase 4: Evaluate the Model ===
 # (This runs the Voter and gives you the final accuracy metrics)

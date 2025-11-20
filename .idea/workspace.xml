@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update model training">
-      <change afterPath="$PROJECT_DIR$/Persian/gui_detector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="add GUI" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -212,7 +209,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763567807963</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="add GUI">
+      <option name="closed" value="true" />
+      <created>1763584087349</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1763584087349</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -235,6 +240,7 @@
     <MESSAGE value="update" />
     <MESSAGE value="update detector.py" />
     <MESSAGE value="update model training" />
-    <option name="LAST_COMMIT_MESSAGE" value="update model training" />
+    <MESSAGE value="add GUI" />
+    <option name="LAST_COMMIT_MESSAGE" value="add GUI" />
   </component>
 </project>

@@ -122,7 +122,7 @@ python English/create_balanced_dataset.py
 # === مرحله 3: آموزش تشخیص‌دهنده ===
 # (این از GPU شما برای آموزش LSTM استفاده می‌کند)
 echo "--- اجرای مرحله 3 ---"
-python English/train_detector_updated.py
+python English/train_detector.py
 
 # === مرحله 4: ارزیابی مدل ===
 # (این رأی‌گیر را اجرا کرده و معیارهای دقت نهایی را برای شما ارائه می‌دهد)

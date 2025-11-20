@@ -1,5 +1,5 @@
 #
-# train_detector_updated.py
+# train_detector.py
 # (فاز 3: اسکریپت اصلی آموزش - اصلاح نهایی با num_workers=0)
 #
 import torch
