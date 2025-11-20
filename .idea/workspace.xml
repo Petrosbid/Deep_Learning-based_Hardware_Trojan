@@ -4,7 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="add GUI" />
+    <list default="true" id="ce25f21f-b2ba-462c-bce5-3cb8dac14721" name="Changes" comment="update">
+      <change afterPath="$PROJECT_DIR$/English/cleaner.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/create_balanced_dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/detector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/evaluate.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/gui_detector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/netlist_parser.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/phase1_graph_utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/preprocess_nlp.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/process_originals.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/run_batch_extraction.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/train_detector.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/English/train_nlp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/English/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/English/README.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -46,34 +63,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Netlist_Parser_scripts.executor": "Run",
-    "Python.cleaner.executor": "Run",
-    "Python.count_jsonl_lines.executor": "Run",
-    "Python.create_balanced_dataset.executor": "Run",
-    "Python.dataset_upldated.executor": "Run",
-    "Python.detector.executor": "Run",
-    "Python.evaluate.executor": "Run",
-    "Python.graph_visualizer.executor": "Run",
-    "Python.gui_detector.executor": "Run",
-    "Python.original_designs_Netlist_Parser_scripts.executor": "Run",
-    "Python.preprocess_nlp.executor": "Run",
-    "Python.process_originals.executor": "Run",
-    "Python.run_batch_extraction.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.train_detector.executor": "Run",
-    "Python.train_detector_updated.executor": "Run",
-    "Python.train_nlp.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "D:/VHDL_AI_Project",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Netlist_Parser_scripts.executor&quot;: &quot;Run&quot;,
+    &quot;Python.cleaner.executor&quot;: &quot;Run&quot;,
+    &quot;Python.count_jsonl_lines.executor&quot;: &quot;Run&quot;,
+    &quot;Python.create_balanced_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_upldated.executor&quot;: &quot;Run&quot;,
+    &quot;Python.detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.evaluate.executor&quot;: &quot;Run&quot;,
+    &quot;Python.graph_visualizer.executor&quot;: &quot;Run&quot;,
+    &quot;Python.gui_detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.original_designs_Netlist_Parser_scripts.executor&quot;: &quot;Run&quot;,
+    &quot;Python.preprocess_nlp.executor&quot;: &quot;Run&quot;,
+    &quot;Python.process_originals.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_batch_extraction.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_detector.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_detector_updated.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_nlp.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/VHDL_AI_Project&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -217,7 +234,15 @@
       <option name="project" value="LOCAL" />
       <updated>1763584087349</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="update">
+      <option name="closed" value="true" />
+      <created>1763662226453</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1763662226453</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -237,10 +262,10 @@
     <MESSAGE value="complete phase 2" />
     <MESSAGE value="upload app" />
     <MESSAGE value="add English Code" />
-    <MESSAGE value="update" />
     <MESSAGE value="update detector.py" />
     <MESSAGE value="update model training" />
     <MESSAGE value="add GUI" />
-    <option name="LAST_COMMIT_MESSAGE" value="add GUI" />
+    <MESSAGE value="update" />
+    <option name="LAST_COMMIT_MESSAGE" value="update" />
   </component>
 </project>
