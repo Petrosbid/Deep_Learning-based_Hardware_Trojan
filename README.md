@@ -197,6 +197,9 @@ python English/detector.py Test/s38417_T0099_C.v
 
 ⏱️ Total scan time: 14.20 seconds
 ```
+## Screenshots
+
+<img width="1122" height="906" alt="Screenshot 2026-06-18 154845" src="https://github.com/user-attachments/assets/479b44ff-9725-48b1-8756-ddebd405dcda" />
 
 ## **📚 Citations**
 
